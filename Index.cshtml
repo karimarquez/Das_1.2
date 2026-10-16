@@ -1,0 +1,87 @@
+@{
+    Layout = "~/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Existencias de Bar";
+}
+
+<div class="dashboard-title-card d-flex justify-content-between align-items-center">
+    <div>
+        <h2 class="control-heading mb-1"><i class="fa-solid fa-list-check me-2 text-emerald"></i>Control de Inventario - Bar</h2>
+        <p class="text-muted small mb-0">Existencias actuales para licores, sodas y zumos.</p>
+    </div>
+    <div>
+        <button class="btn btn-premium btn-sm fw-semibold">
+            <i class="fa-solid fa-plus me-1"></i>Registrar Entrada
+        </button>
+    </div>
+</div>
+
+<div class="product-grid">
+    <!-- Producto 1 (Tequila - Stock OK) -->
+    <div class="p-card">
+        <div class="p-card-accent accent-green"></div>
+        <div class="p-icon-container">
+            <i class="fa-solid fa-wine-bottle"></i>
+        </div>
+        <h4 class="p-name">Tequila Reposado 750ml</h4>
+        <div class="p-cat">Licores / Importados</div>
+        
+        <div class="p-details">
+            <div class="p-stock-info">
+                <span class="p-stock-label">Existencia:</span>
+                <span class="p-stock-value text-emerald">6 Botellas</span>
+            </div>
+            <div class="text-center">
+                <span class="status-badge-visual status-green"><i class="fa-solid fa-check me-1"></i>En Stock</span>
+            </div>
+            <div class="action-btn-container">
+                <button class="btn btn-sm btn-outline-dark w-100">Editar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Producto 2 (Cerveza - Stock OK) -->
+    <div class="p-card">
+        <div class="p-card-accent accent-green"></div>
+        <div class="p-icon-container">
+            <i class="fa-solid fa-beer-mug-empty"></i>
+        </div>
+        <h4 class="p-name">Cerveza Pilsener 330ml</h4>
+        <div class="p-cat">Sodas / Cervezas</div>
+        
+        <div class="p-details">
+            <div class="p-stock-info">
+                <span class="p-stock-label">Existencia:</span>
+                <span class="p-stock-value text-emerald">24 Unidades</span>
+            </div>
+            <div class="text-center">
+                <span class="status-badge-visual status-green"><i class="fa-solid fa-check me-1"></i>En Stock</span>
+            </div>
+            <div class="action-btn-container">
+                <button class="btn btn-sm btn-outline-dark w-100">Editar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Producto 3 (Zumo - Stock BAJO) -->
+    <div class="p-card">
+        <div class="p-card-accent accent-red"></div>
+        <div class="p-icon-container">
+            <i class="fa-solid fa-jar-wheat"></i>
+        </div>
+        <h4 class="p-name">Zumo de Limón Concentrado</h4>
+        <div class="p-cat">Zumos / Mezcladores</div>
+        
+        <div class="p-details">
+            <div class="p-stock-info">
+                <span class="p-stock-label">Existencia:</span>
+                <span class="p-stock-value text-danger">1 Galón</span>
+            </div>
+            <div class="text-center">
+                <span class="status-badge-visual status-red"><i class="fa-solid fa-triangle-exclamation me-1"></i>Stock Bajo</span>
+            </div>
+            <div class="action-btn-container">
+                <button class="btn btn-sm btn-outline-dark w-100">Editar</button>
+            </div>
+        </div>
+    </div>
+</div>
