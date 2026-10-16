@@ -1,0 +1,27 @@
+@model ReportsViewModel
+@{
+    ViewData["Title"] = Model.IsDaily ? "Reporte diario" : "Reporte mensual";
+}
+
+<section class="page-heading">
+    <div><p class="eyebrow">ANÁLISIS DE BAR</p><h1>Reporte @(Model.IsDaily ? "diario" : "mensual")</h1><p class="muted">Actividad registrada durante @Model.PeriodLabel.</p></div>
+    <div class="heading-actions"><a class="button @(Model.IsDaily ? "button-secondary" : "button-primary")" asp-action="Reports" asp-route-period="day">Diario</a><a class="button @(!Model.IsDaily ? "button-secondary" : "button-primary")" asp-action="Reports" asp-route-period="month">Mensual</a></div>
+    <a class="button button-secondary" asp-action="Index">Volver al inventario</a>
+</section>
+
+<section class="metric-grid report-metrics">
+    <article class="metric-card"><span class="metric-label">Entradas</span><strong class="metric-value">@Model.EntryCount.ToString("00")</strong><span class="metric-note">Registros del período</span></article>
+    <article class="metric-card"><span class="metric-label">Consumos</span><strong class="metric-value">@Model.ConsumptionCount.ToString("00")</strong><span class="metric-note">Registros del período</span></article>
+    <article class="metric-card metric-warning"><span class="metric-label">Mermas</span><strong class="metric-value">@Model.WasteCount.ToString("00")</strong><span class="metric-note">Revisar causas recurrentes</span></article>
+    <article class="metric-card metric-accent"><span class="metric-label">Productos consumidos</span><strong class="metric-value">@Model.ProductsConsumedCount.ToString("00")</strong><span class="metric-note">Productos distintos en el período</span></article>
+</section>
+
+<section class="panel full-panel">
+    <div class="panel-heading"><div><p class="eyebrow">DETALLE DEL PERÍODO</p><h2>@(Model.IsDaily ? "Movimientos del día" : "Últimos movimientos del mes")</h2></div></div>
+    <div class="table-scroll"><table class="inventory-table movement-table"><thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th>Cantidad</th><th>Motivo</th></tr></thead><tbody>
+    @foreach (var movement in Model.Movements.Take(12))
+    {
+        <tr><td>@movement.RecordedAt.ToString("dd/MM HH:mm")</td><td><span class="product-name">@movement.ProductName</span></td><td>@movement.Type</td><td>@movement.Quantity.ToString("0.##") @movement.Unit</td><td>@movement.Reason</td></tr>
+    }
+    </tbody></table></div>
+</section>

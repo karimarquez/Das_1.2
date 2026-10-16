@@ -1,0 +1,160 @@
+@model InventoryDashboardViewModel
+@{
+    ViewData["Title"] = "Inventario";
+    var categories = Model.Products.Select(product => product.Category).Distinct().OrderBy(category => category).ToList();
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">PIPIRIS NAIS <span>·</span> CONTROL DE BAR</p>
+        <h1>Inventario</h1>
+        <p class="muted">Existencias y actividad del área de bebidas.</p>
+    </div>
+    <div class="heading-actions">
+        <a class="button button-secondary" asp-action="CreateProduct">+ Producto</a>
+        <button class="button button-primary" type="button" data-bs-toggle="modal" data-bs-target="#movementModal">+ Registrar movimiento</button>
+    </div>
+</section>
+
+@if (TempData["Success"] is string success)
+{
+    <div class="notice notice-success" role="status">@success</div>
+}
+@if (TempData["Error"] is string error)
+{
+    <div class="notice notice-error" role="alert">@error</div>
+}
+
+<section class="metric-grid" aria-label="Resumen de inventario">
+    <article class="metric-card">
+        <span class="metric-label">Productos activos</span>
+        <strong class="metric-value">@Model.ProductCount.ToString("00")</strong>
+        <span class="metric-note">En el catálogo de bar</span>
+    </article>
+    <article class="metric-card metric-warning">
+        <span class="metric-label">Bajo mínimo</span>
+        <strong class="metric-value">@Model.LowStockCount.ToString("00")</strong>
+        <span class="metric-note">Requieren revisión</span>
+    </article>
+    <article class="metric-card">
+        <span class="metric-label">Movimientos de hoy</span>
+        <strong class="metric-value">@Model.TodayMovementCount.ToString("00")</strong>
+        <span class="metric-note">Entradas, consumos y mermas</span>
+    </article>
+    <article class="metric-card metric-accent">
+        <span class="metric-label">Consumos registrados hoy</span>
+        <strong class="metric-value">@Model.TodayConsumptionCount.ToString("00")</strong>
+        <span class="metric-note">Operaciones registradas</span>
+    </article>
+</section>
+
+<div class="workspace-grid">
+    <section class="panel inventory-panel">
+        <div class="panel-heading">
+            <div>
+                <p class="eyebrow">EXISTENCIAS</p>
+                <h2>Productos del bar</h2>
+            </div>
+            <a class="text-link" asp-action="Movements">Ver movimientos <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="table-tools">
+            <label class="search-field"><span class="visually-hidden">Buscar producto</span><input id="productSearch" type="search" placeholder="Buscar producto..." /></label>
+            <label class="filter-select"><span class="visually-hidden">Filtrar por categoría</span>
+                <select id="categoryFilter"><option value="">Todas las categorías</option>@foreach (var category in categories) { <option value="@category">@category</option> }</select>
+            </label>
+        </div>
+        <div class="table-scroll">
+            <table class="inventory-table">
+                <thead><tr><th>Producto</th><th>Ubicación</th><th>Existencia</th><th>Estado</th><th><span class="visually-hidden">Acciones</span></th></tr></thead>
+                <tbody>
+                @foreach (var product in Model.Products)
+                {
+                    var isLow = product.Stock <= product.MinimumStock;
+                    var percent = product.MinimumStock == 0 ? 100 : Math.Clamp((double)(product.Stock / (product.MinimumStock * 2)) * 100, 4, 100);
+                    <tr data-product="@product.Name.ToLowerInvariant()" data-category="@product.Category">
+                        <td><span class="product-name">@product.Name</span><span class="product-detail">@product.Presentation · @product.Category</span></td>
+                        <td class="location-cell">@product.Location</td>
+                        <td><div class="stock-cell"><strong>@product.Stock.ToString("0.##")</strong><span>@product.Unit</span></div><div class="stock-track"><span class="@(isLow ? "stock-fill stock-fill-low" : "stock-fill")" style="width: @percent.ToString("0")%"></span></div></td>
+                        <td><span class="status-pill @(isLow ? "status-low" : "status-ok")">@(isLow ? "Reponer" : "Disponible")</span></td>
+                        <td><button class="icon-button count-button" type="button" title="Registrar conteo físico" aria-label="Registrar conteo físico de @product.Name" data-product-id="@product.Id" data-product-name="@product.Name" data-current-stock="@product.Stock" data-bs-toggle="modal" data-bs-target="#countModal">···</button></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+            <p id="emptySearch" class="empty-state" hidden>No hay productos que coincidan con la búsqueda.</p>
+        </div>
+        <div class="table-footnote">El mínimo está configurado por producto. El saldo cambia con cada movimiento validado.</div>
+    </section>
+
+    <aside class="panel activity-panel">
+        <div class="panel-heading">
+            <div><p class="eyebrow">REGISTRO RECIENTE</p><h2>Actividad</h2></div>
+            <a class="icon-link" asp-action="Movements" aria-label="Abrir todos los movimientos">↗</a>
+        </div>
+        <ol class="activity-list">
+        @foreach (var movement in Model.RecentMovements)
+        {
+            var movementClass = movement.Type == "Entrada" ? "activity-entry" : movement.Type == "Merma" ? "activity-waste" : "activity-use";
+            <li class="activity-item">
+                <span class="activity-mark @movementClass" aria-hidden="true"></span>
+                <div class="activity-copy"><strong>@movement.ProductName</strong><span>@movement.Type · @movement.Reason</span><time>@movement.RecordedAt.ToString("HH:mm")</time></div>
+                <span class="activity-quantity @(movement.Type == "Entrada" ? "quantity-positive" : "")">@(movement.Type == "Entrada" ? "+" : "−")@movement.Quantity.ToString("0.##")</span>
+            </li>
+        }
+        </ol>
+        <a class="button button-quiet full-width" asp-action="Reports">Consultar reporte mensual <span aria-hidden="true">→</span></a>
+    </aside>
+</div>
+
+<div class="modal fade" id="movementModal" tabindex="-1" aria-labelledby="movementModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content app-modal">
+        <form asp-action="RecordMovement" method="post">
+            <div class="modal-header"><div><p class="eyebrow">ACTUALIZAR EXISTENCIAS</p><h2 class="modal-title" id="movementModalTitle">Registrar movimiento</h2></div><button type="button" class="close-button" data-bs-dismiss="modal" aria-label="Cerrar">×</button></div>
+            <div class="modal-body form-stack">
+                <label class="form-label">Tipo de movimiento<select class="form-select" name="Type"><option>Entrada</option><option>Consumo</option><option>Merma</option></select></label>
+                <label class="form-label">Producto<select class="form-select" name="ProductId" required>@foreach (var product in Model.Products) { <option value="@product.Id">@product.Name · @product.Stock.ToString("0.##") @product.Unit</option> }</select></label>
+                <label class="form-label">Cantidad<input class="form-control" type="number" name="Quantity" min="0.01" step="0.01" required /></label>
+                <label class="form-label">Motivo<input class="form-control" type="text" name="Reason" maxlength="120" placeholder="Ej. Reposición de proveedor" required /></label>
+                <p class="form-hint">Consumo y merma no pueden superar las existencias disponibles.</p>
+            </div>
+            <div class="modal-footer"><button type="button" class="button button-secondary" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="button button-primary">Guardar movimiento</button></div>
+        </form>
+    </div></div>
+</div>
+
+<div class="modal fade" id="countModal" tabindex="-1" aria-labelledby="countModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content app-modal">
+        <form asp-action="RegisterCount" method="post">
+            <div class="modal-header"><div><p class="eyebrow">CIERRE DE TURNO</p><h2 class="modal-title" id="countModalTitle">Conteo físico</h2></div><button type="button" class="close-button" data-bs-dismiss="modal" aria-label="Cerrar">×</button></div>
+            <div class="modal-body form-stack"><input id="countProductId" type="hidden" name="ProductId" /><p id="countProductLabel" class="count-product-label"></p><p class="form-hint">Se comparará con el saldo teórico y se registrará cualquier diferencia.</p><label class="form-label">Cantidad contada<input id="actualStock" class="form-control" type="number" name="ActualStock" min="0" step="0.01" required /></label></div>
+            <div class="modal-footer"><button type="button" class="button button-secondary" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="button button-primary">Comparar conteo</button></div>
+        </form>
+    </div></div>
+</div>
+
+@section Scripts {
+    <script>
+        const productSearch = document.getElementById('productSearch');
+        const categoryFilter = document.getElementById('categoryFilter');
+        const productRows = [...document.querySelectorAll('.inventory-table tbody tr')];
+        const emptySearch = document.getElementById('emptySearch');
+        function filterProducts() {
+            const query = productSearch.value.trim().toLocaleLowerCase();
+            const category = categoryFilter.value;
+            let visibleCount = 0;
+            for (const row of productRows) {
+                const visible = row.dataset.product.includes(query) && (!category || row.dataset.category === category);
+                row.hidden = !visible;
+                visibleCount += visible ? 1 : 0;
+            }
+            emptySearch.hidden = visibleCount > 0;
+        }
+        productSearch.addEventListener('input', filterProducts);
+        categoryFilter.addEventListener('change', filterProducts);
+        document.querySelectorAll('.count-button').forEach(button => button.addEventListener('click', () => {
+            document.getElementById('countProductId').value = button.dataset.productId;
+            document.getElementById('countProductLabel').textContent = `${button.dataset.productName} · saldo actual ${button.dataset.currentStock}`;
+            document.getElementById('actualStock').value = button.dataset.currentStock;
+        }));
+    </script>
+}

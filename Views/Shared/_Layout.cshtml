@@ -1,0 +1,37 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Pipiris Nais</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <a class="brand-lockup" asp-controller="Inventory" asp-action="Index"><span class="brand-mark">PN</span><span><strong>Pipiris Nais</strong><small>BAR · INVENTARIO</small></span></a>
+            <div class="nav-caption">OPERACIÓN</div>
+            <nav class="side-nav" aria-label="Navegación principal">
+                <a class="side-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="Inventory" asp-action="Index"><span class="nav-number">01</span>Inventario</a>
+                <a class="side-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Movements" ? "active" : "")" asp-controller="Inventory" asp-action="Movements"><span class="nav-number">02</span>Movimientos</a>
+                <a class="side-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Recipes" ? "active" : "")" asp-controller="Inventory" asp-action="Recipes"><span class="nav-number">03</span>Recetas</a>
+                <a class="side-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Reports" ? "active" : "")" asp-controller="Inventory" asp-action="Reports"><span class="nav-number">04</span>Reportes</a>
+            </nav>
+            <div class="sidebar-bottom"><span class="online-dot"></span><span>Turno de bar</span><span class="role-label">ENCARGADO</span></div>
+        </aside>
+        <main class="main-content" role="main">
+            <header class="topbar"><span>Control operativo</span><time>@DateTime.Now.ToString("dddd, dd 'de' MMMM", new System.Globalization.CultureInfo("es-SV"))</time></header>
+            <div class="content-wrap">
+            @RenderBody()
+            </div>
+            <footer class="app-footer"><span>Pipiris Nais · Gestión de bebidas</span><span>Prototipo de inventario</span></footer>
+        </main>
+    </div>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
