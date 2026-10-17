@@ -1,0 +1,35 @@
+@model MovementListViewModel
+@{
+    ViewData["Title"] = "Movimientos";
+}
+
+<section class="page-heading">
+    <div><p class="eyebrow">TRAZABILIDAD</p><h1>Movimientos</h1><p class="muted">Entradas, consumos, mermas y ajustes de inventario.</p></div>
+    <a class="button button-primary" asp-controller="Inventory" asp-action="Index">Volver al inventario</a>
+</section>
+
+<section class="panel full-panel">
+    <form asp-action="Index" method="get" class="row g-2 align-items-end px-4 pt-4">
+        <div class="col-12 col-md-4"><label class="form-label mb-0">@Html.DisplayNameFor(m => m.Filter.ProductId)<select asp-for="Filter.ProductId" asp-items="Model.ProductOptions" class="form-select"><option value="">Todos los productos</option></select></label></div>
+        <div class="col-6 col-md-2"><label class="form-label mb-0">@Html.DisplayNameFor(m => m.Filter.Type)<select asp-for="Filter.Type" asp-items="Html.GetEnumSelectList<MovementType>()" class="form-select"><option value="">Todos</option></select></label></div>
+        <div class="col-6 col-md-2"><label class="form-label mb-0">@Html.DisplayNameFor(m => m.Filter.From)<input asp-for="Filter.From" class="form-control" /></label></div>
+        <div class="col-6 col-md-2"><label class="form-label mb-0">@Html.DisplayNameFor(m => m.Filter.To)<input asp-for="Filter.To" class="form-control" /></label></div>
+        <div class="col-6 col-md-2 d-flex gap-2"><button class="button button-primary flex-fill" type="submit">Filtrar</button>@if (Model.Filter.HasFilters) { <a class="button button-secondary" asp-action="Index">Limpiar</a> }</div>
+    </form>
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="notice notice-error mx-4 mt-3 mb-0" role="alert">@string.Join(" ", ViewData.ModelState.Values.SelectMany(entry => entry.Errors).Select(error => error.ErrorMessage))</div>
+    }
+    <div class="panel-heading"><div><p class="eyebrow">BITÁCORA</p><h2>@Model.Count registros</h2></div></div>
+    <div class="table-scroll"><table class="inventory-table movement-table"><thead><tr><th>Fecha y hora</th><th>Producto</th><th>Tipo</th><th>Cantidad</th><th>Saldo</th><th>Motivo</th><th>Usuario</th></tr></thead><tbody>
+    @foreach (var movement in Model.Movements)
+    {
+        var typeClass = movement.Type == MovementType.Entrada ? "status-ok" : movement.Type == MovementType.Merma ? "status-low" : "status-neutral";
+        <tr><td>@movement.RecordedAt.ToString("dd/MM/yyyy HH:mm")</td><td><a class="product-name" asp-controller="Products" asp-action="Details" asp-route-id="@movement.ProductId">@movement.ProductName</a></td><td><span class="status-pill @typeClass">@movement.Type</span></td><td>@(movement.IsIncrease ? "+" : "−")@movement.Quantity.ToString("0.##") @movement.Unit</td><td>@movement.StockAfter.ToString("0.##")</td><td>@movement.Reason</td><td>@movement.UserName</td></tr>
+    }
+    </tbody></table></div>
+    @if (Model.Count == 0)
+    {
+        <p class="empty-state">No hay movimientos que coincidan con los filtros.</p>
+    }
+</section>

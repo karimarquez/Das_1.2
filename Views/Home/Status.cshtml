@@ -1,0 +1,16 @@
+@model StatusViewModel
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<section class="page-heading">
+    <div><p class="eyebrow">ERROR @Model.StatusCode</p><h1>@Model.Title</h1><p class="muted">@Model.Message</p></div>
+</section>
+
+<section class="panel form-panel">
+    <p class="muted mb-3">Puedes volver al tablero de inventario o consultar la bitácora de movimientos.</p>
+    <div class="heading-actions">
+        <a class="button button-primary" asp-controller="Inventory" asp-action="Index">Ir al inventario</a>
+        <a class="button button-secondary" asp-controller="Movements" asp-action="Index">Ver movimientos</a>
+    </div>
+</section>
