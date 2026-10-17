@@ -1,0 +1,10 @@
+## Compilación de .NET y archivos locales de Visual Studio
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+*.suo
+*.userprefs
+*.rsuser
+*.log
