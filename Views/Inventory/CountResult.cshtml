@@ -1,0 +1,34 @@
+@model PhysicalCountResultViewModel
+@{
+    ViewData["Title"] = $"Conteo #{Model.Count.Id}";
+}
+
+<section class="page-heading">
+    <div><p class="eyebrow">CIERRE DE TURNO <span>·</span> CONTEO #@Model.Count.Id</p><h1>Resultado del conteo</h1><p class="muted">Registrado el @Model.Count.CountedAt.ToString("dd/MM/yyyy 'a las' HH:mm") por @Model.Count.UserName.</p></div>
+    <div class="heading-actions">
+        <a class="button button-secondary" asp-controller="Movements" asp-action="Index" asp-route-Filter.Type="@((int)MovementType.Ajuste)">Ver ajustes</a>
+        <a class="button button-secondary" asp-action="Count">Nuevo conteo</a>
+        <a class="button button-primary" asp-action="Index">Volver al inventario</a>
+    </div>
+</section>
+
+@if (TempData["Success"] is string success) { <div class="notice notice-success" role="status">@success</div> }
+
+<section class="metric-grid" aria-label="Resumen del conteo">
+    <article class="metric-card"><span class="metric-label">Productos contados</span><strong class="metric-value">@Model.Lines.Count.ToString("00")</strong><span class="metric-note">@Model.MatchCount sin diferencia</span></article>
+    <article class="metric-card metric-warning"><span class="metric-label">Faltantes</span><strong class="metric-value">@Model.ShortageCount.ToString("00")</strong><span class="metric-note">$@Model.ShortageCost.ToString("0.00") a precio de costo</span></article>
+    <article class="metric-card"><span class="metric-label">Sobrantes</span><strong class="metric-value">@Model.SurplusCount.ToString("00")</strong><span class="metric-note">Revisar entradas no registradas</span></article>
+    <article class="metric-card metric-accent"><span class="metric-label">Ajustes registrados</span><strong class="metric-value">@((Model.ShortageCount + Model.SurplusCount).ToString("00"))</strong><span class="metric-note">Quedan en la bitácora para revisión</span></article>
+</section>
+
+<section class="panel full-panel">
+    <div class="panel-heading"><div><p class="eyebrow">COMPARACIÓN</p><h2>Saldo teórico contra conteo físico</h2></div></div>
+    <div class="table-scroll"><table class="inventory-table movement-table"><thead><tr><th>Producto</th><th>Teórico</th><th>Contado</th><th>Diferencia</th><th>Estado</th><th>Costo</th></tr></thead><tbody>
+    @foreach (var line in Model.Lines)
+    {
+        var state = line.Difference == 0 ? "Cuadra" : line.Difference < 0 ? "Faltante" : "Sobrante";
+        var stateClass = line.Difference == 0 ? "status-ok" : line.Difference < 0 ? "status-low" : "status-neutral";
+        <tr><td><a class="product-name" asp-controller="Products" asp-action="Details" asp-route-id="@line.ProductId">@line.ProductName</a></td><td>@line.TheoreticalStock.ToString("0.##") @line.Unit</td><td>@line.CountedStock.ToString("0.##") @line.Unit</td><td>@(line.Difference > 0 ? "+" : "")@line.Difference.ToString("0.##")</td><td><span class="status-pill @stateClass">@state</span></td><td>@(line.DifferenceCost < 0 ? "−" : "")$@Math.Abs(line.DifferenceCost).ToString("0.00")</td></tr>
+    }
+    </tbody></table></div>
+</section>

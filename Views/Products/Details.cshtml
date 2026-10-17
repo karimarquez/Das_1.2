@@ -1,0 +1,100 @@
+@model ProductDetailsViewModel
+@{
+    var product = Model.Product;
+    ViewData["Title"] = product.Name;
+    var returnUrl = Url.Action("Details", new { id = product.Id });
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">CATÁLOGO DE BAR <span>·</span> @product.Category.ToUpperInvariant()</p>
+        <h1>@product.Name</h1>
+        <p class="muted">@product.Presentation · @product.Location · Actualizado el @product.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+    </div>
+    <div class="heading-actions">
+        <a class="button button-secondary" asp-controller="Inventory" asp-action="Index">Volver al inventario</a>
+        <a class="button button-secondary" asp-action="Edit" asp-route-id="@product.Id">Editar</a>
+        <form asp-action="ToggleActive" asp-route-id="@product.Id" method="post">
+            <button class="button @(product.IsActive ? "button-secondary" : "button-primary")" type="submit">@(product.IsActive ? "Desactivar" : "Reactivar")</button>
+        </form>
+    </div>
+</section>
+
+@if (TempData["Success"] is string success) { <div class="notice notice-success" role="status">@success</div> }
+@if (TempData["Error"] is string error) { <div class="notice notice-error" role="alert">@error</div> }
+@if (!product.IsActive) { <div class="notice notice-error" role="status">Producto inactivo: no aparece en el tablero ni acepta movimientos. Su historial se conserva.</div> }
+
+<section class="metric-grid" aria-label="Resumen del producto">
+    <article class="metric-card @(product.IsLowStock ? "metric-warning" : "")">
+        <span class="metric-label">Existencia</span>
+        <strong class="metric-value">@product.Stock.ToString("0.##")</strong>
+        <span class="metric-note">@product.Unit · @(product.IsLowStock ? "requiere reposición" : "disponible")</span>
+    </article>
+    <article class="metric-card">
+        <span class="metric-label">Stock mínimo</span>
+        <strong class="metric-value">@product.MinimumStock.ToString("0.##")</strong>
+        <span class="metric-note">@product.Unit</span>
+    </article>
+    <article class="metric-card">
+        <span class="metric-label">Equivalencia de receta</span>
+        <strong class="metric-value">@product.BaseUnitsPerStockUnit.ToString("0.####")</strong>
+        <span class="metric-note">@product.BaseUnit por presentación · @Model.StockInBaseUnits.ToString("0.##") @product.BaseUnit en total</span>
+    </article>
+    <article class="metric-card metric-accent">
+        <span class="metric-label">Valor en inventario</span>
+        <strong class="metric-value">$@Model.StockValue.ToString("0.00")</strong>
+        <span class="metric-note">Costo unitario $@product.UnitCost.ToString("0.00")</span>
+    </article>
+</section>
+
+<div class="workspace-grid">
+    <section class="panel full-panel">
+        <div class="panel-heading">
+            <div><p class="eyebrow">KARDEX</p><h2>Últimos movimientos</h2></div>
+            <a class="text-link" asp-controller="Movements" asp-action="Index" asp-route-Filter.ProductId="@product.Id">Ver todos <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="table-scroll">
+            <table class="inventory-table movement-table">
+                <thead><tr><th>Fecha y hora</th><th>Tipo</th><th>Cantidad</th><th>Saldo</th><th>Motivo</th><th>Usuario</th></tr></thead>
+                <tbody>
+                @foreach (var movement in Model.Movements)
+                {
+                    var typeClass = movement.Type == MovementType.Entrada ? "status-ok" : movement.Type == MovementType.Merma ? "status-low" : "status-neutral";
+                    <tr>
+                        <td>@movement.RecordedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td><span class="status-pill @typeClass">@movement.Type</span></td>
+                        <td>@(movement.IsIncrease ? "+" : "−")@movement.Quantity.ToString("0.##") @movement.Unit</td>
+                        <td>@movement.StockBefore.ToString("0.##") → @movement.StockAfter.ToString("0.##")</td>
+                        <td>@movement.Reason</td>
+                        <td>@movement.UserName</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        @if (Model.Movements.Count == 0)
+        {
+            <p class="empty-state">Este producto todavía no tiene movimientos.</p>
+        }
+    </section>
+
+    <aside class="panel">
+        <div class="panel-heading"><div><p class="eyebrow">ACTUALIZAR EXISTENCIAS</p><h2>Registrar movimiento</h2></div></div>
+        @if (product.IsActive)
+        {
+            <form asp-controller="Movements" asp-action="Register" method="post" class="form-stack px-4 pb-4">
+                <input type="hidden" name="ProductId" value="@product.Id" />
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <label class="form-label">Tipo de movimiento<select class="form-select" name="Type"><option>Entrada</option><option>Consumo</option><option>Merma</option></select></label>
+                <label class="form-label">Cantidad (@product.Unit)<input class="form-control" type="number" name="Quantity" min="0.01" step="0.01" required /></label>
+                <label class="form-label">Motivo<input class="form-control" type="text" name="Reason" minlength="3" maxlength="120" placeholder="Ej. Botella quebrada" required /></label>
+                <p class="form-hint">Disponible: @product.Stock.ToString("0.##") @product.Unit. Consumo y merma no pueden superar este saldo.</p>
+                <button class="button button-primary" type="submit">Guardar movimiento</button>
+            </form>
+        }
+        else
+        {
+            <p class="empty-state">Reactiva el producto para registrar movimientos.</p>
+        }
+    </aside>
+</div>

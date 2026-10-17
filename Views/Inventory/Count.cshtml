@@ -1,0 +1,62 @@
+@model PhysicalCountSheetViewModel
+@{
+    ViewData["Title"] = "Conteo de cierre";
+}
+
+<section class="page-heading">
+    <div><p class="eyebrow">CIERRE DE TURNO</p><h1>Conteo físico</h1><p class="muted">Registra lo que hay en barra y bodega. El saldo del sistema se muestra después de guardar para no influir en el conteo.</p></div>
+    <a class="button button-secondary" asp-action="Index">Volver al inventario</a>
+</section>
+
+@if (TempData["Error"] is string error) { <div class="notice notice-error" role="alert">@error</div> }
+
+<div class="workspace-grid">
+    <section class="panel full-panel">
+        <form asp-action="Count" method="post">
+            <div asp-validation-summary="ModelOnly" class="validation-summary px-4 pt-3"></div>
+            <div class="table-scroll">
+                <table class="inventory-table">
+                    <thead><tr><th>Producto</th><th>Ubicación</th><th>Unidad</th><th>Cantidad contada</th></tr></thead>
+                    <tbody>
+                    @for (var i = 0; i < Model.Lines.Count; i++)
+                    {
+                        <tr>
+                            <td><input type="hidden" asp-for="Lines[i].ProductId" /><span class="product-name">@Model.Lines[i].ProductName</span><span class="product-detail">@Model.Lines[i].Presentation · @Model.Lines[i].Category</span></td>
+                            <td class="location-cell">@Model.Lines[i].Location</td>
+                            <td>@Model.Lines[i].Unit</td>
+                            <td><input asp-for="Lines[i].CountedStock" class="form-control" type="number" min="0" step="0.01" placeholder="Sin contar" aria-label="Cantidad contada de @Model.Lines[i].ProductName" /><span asp-validation-for="Lines[i].CountedStock" class="validation-message"></span></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-footnote d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <span>Deja vacío lo que no contaste: solo se comparan y ajustan los productos con cantidad.</span>
+                <button class="button button-primary" type="submit">Comparar y registrar conteo</button>
+            </div>
+        </form>
+    </section>
+
+    <aside class="panel">
+        <div class="panel-heading"><div><p class="eyebrow">HISTORIAL</p><h2>Conteos recientes</h2></div></div>
+        @if (Model.RecentCounts.Count == 0)
+        {
+            <p class="empty-state">Aún no hay conteos registrados.</p>
+        }
+        else
+        {
+            <ol class="activity-list">
+            @foreach (var count in Model.RecentCounts)
+            {
+                var differences = count.Lines.Count(line => line.Difference != 0);
+                <li class="activity-item">
+                    <span class="activity-mark @(differences > 0 ? "activity-waste" : "")" aria-hidden="true"></span>
+                    <div class="activity-copy"><a asp-action="CountResult" asp-route-id="@count.Id"><strong>Conteo #@count.Id</strong></a><span>@count.Lines.Count producto(s) · @differences con diferencia</span><time>@count.CountedAt.ToString("dd/MM/yyyy HH:mm")</time></div>
+                </li>
+            }
+            </ol>
+        }
+    </aside>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

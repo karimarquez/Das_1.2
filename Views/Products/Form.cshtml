@@ -1,0 +1,58 @@
+@model ProductFormViewModel
+@{
+    ViewData["Title"] = Model.IsNew ? "Nuevo producto" : "Editar producto";
+    var formAction = Model.IsNew ? "Create" : "Edit";
+}
+
+<section class="page-heading">
+    <div>
+        <p class="eyebrow">CATÁLOGO DE BAR</p>
+        <h1>@(Model.IsNew ? "Nuevo producto" : "Editar producto")</h1>
+        <p class="muted">@(Model.IsNew ? "Define presentación, unidad de control y nivel mínimo." : "Ajusta los datos del catálogo. La existencia solo cambia con movimientos o conteos.")</p>
+    </div>
+    @if (Model.IsNew)
+    {
+        <a class="button button-secondary" asp-controller="Inventory" asp-action="Index">Volver al inventario</a>
+    }
+    else
+    {
+        <a class="button button-secondary" asp-action="Details" asp-route-id="@Model.Id">Volver al producto</a>
+    }
+</section>
+
+<section class="panel form-panel">
+    <form asp-action="@formAction" asp-route-id="@(Model.IsNew ? null : Model.Id)" method="post" class="product-form">
+        <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+        <input type="hidden" name="Id" value="@Model.Id" />
+        <label class="form-label">@Html.DisplayNameFor(m => m.Name)<input asp-for="Name" class="form-control" placeholder="Ej. Soda de limón" /><span asp-validation-for="Name" class="validation-message"></span></label>
+        <label class="form-label">@Html.DisplayNameFor(m => m.Category)<select asp-for="Category" asp-items="Model.CategoryOptions" class="form-select"></select><span asp-validation-for="Category" class="validation-message"></span></label>
+        <label class="form-label">@Html.DisplayNameFor(m => m.Presentation)<input asp-for="Presentation" class="form-control" placeholder="Ej. Botella 600 ml" /><span asp-validation-for="Presentation" class="validation-message"></span></label>
+        <label class="form-label">@Html.DisplayNameFor(m => m.Location)<input asp-for="Location" class="form-control" placeholder="Ej. Refrigerador 01" /><span asp-validation-for="Location" class="validation-message"></span></label>
+        <label class="form-label">@Html.DisplayNameFor(m => m.Unit)<select asp-for="Unit" asp-items="Model.UnitOptions" class="form-select"></select><span asp-validation-for="Unit" class="validation-message"></span></label>
+        <label class="form-label">@Html.DisplayNameFor(m => m.BaseUnit)<select asp-for="BaseUnit" asp-items="Model.BaseUnitOptions" class="form-select"></select><span asp-validation-for="BaseUnit" class="validation-message"></span></label>
+        <label class="form-label">@Html.DisplayNameFor(m => m.BaseUnitsPerStockUnit)<input asp-for="BaseUnitsPerStockUnit" class="form-control" type="number" min="0.0001" step="0.0001" /><span asp-validation-for="BaseUnitsPerStockUnit" class="validation-message"></span><span class="form-hint">Ejemplo: 25.36 oz por botella de 750 ml.</span></label>
+        @if (Model.IsNew)
+        {
+            <label class="form-label">@Html.DisplayNameFor(m => m.InitialStock)<input asp-for="InitialStock" class="form-control" type="number" min="0" step="0.01" /><span asp-validation-for="InitialStock" class="validation-message"></span><span class="form-hint">Se registra como una entrada de existencia inicial.</span></label>
+        }
+        else
+        {
+            <div class="form-label">Existencia actual<p class="count-product-label">@Model.CurrentStock.ToString("0.##") @Model.Unit</p><span class="form-hint">Para cambiarla registra un movimiento o un conteo físico.</span></div>
+        }
+        <label class="form-label">@Html.DisplayNameFor(m => m.MinimumStock)<input asp-for="MinimumStock" class="form-control" type="number" min="0" step="0.01" /><span asp-validation-for="MinimumStock" class="validation-message"></span></label>
+        <label class="form-label">@Html.DisplayNameFor(m => m.UnitCost)<input asp-for="UnitCost" class="form-control" type="number" min="0" step="0.01" /><span asp-validation-for="UnitCost" class="validation-message"></span></label>
+        <div class="form-actions">
+            @if (Model.IsNew)
+            {
+                <a class="button button-secondary" asp-controller="Inventory" asp-action="Index">Cancelar</a>
+            }
+            else
+            {
+                <a class="button button-secondary" asp-action="Details" asp-route-id="@Model.Id">Cancelar</a>
+            }
+            <button class="button button-primary" type="submit">@(Model.IsNew ? "Guardar producto" : "Guardar cambios")</button>
+        </div>
+    </form>
+</section>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

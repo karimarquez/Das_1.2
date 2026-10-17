@@ -1,4 +1,7 @@
-﻿<!DOCTYPE html>
+﻿@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+}
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
@@ -14,10 +17,10 @@
             <a class="brand-lockup" asp-controller="Inventory" asp-action="Index"><span class="brand-mark">PN</span><span><strong>Pipiris Nais</strong><small>BAR · INVENTARIO</small></span></a>
             <div class="nav-caption">OPERACIÓN</div>
             <nav class="side-nav" aria-label="Navegación principal">
-                <a class="side-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="Inventory" asp-action="Index"><span class="nav-number">01</span>Inventario</a>
-                <a class="side-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Movements" ? "active" : "")" asp-controller="Inventory" asp-action="Movements"><span class="nav-number">02</span>Movimientos</a>
-                <a class="side-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Recipes" ? "active" : "")" asp-controller="Inventory" asp-action="Recipes"><span class="nav-number">03</span>Recetas</a>
-                <a class="side-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Reports" ? "active" : "")" asp-controller="Inventory" asp-action="Reports"><span class="nav-number">04</span>Reportes</a>
+                <a class="side-link @(currentController is "Inventory" or "Products" ? "active" : "")" asp-controller="Inventory" asp-action="Index"><span class="nav-number">01</span>Inventario</a>
+                <a class="side-link @(currentController == "Movements" ? "active" : "")" asp-controller="Movements" asp-action="Index"><span class="nav-number">02</span>Movimientos</a>
+                <a class="side-link @(currentController == "Recipes" ? "active" : "")" asp-controller="Recipes" asp-action="Index"><span class="nav-number">03</span>Recetas</a>
+                <a class="side-link @(currentController == "Reports" ? "active" : "")" asp-controller="Reports" asp-action="Index"><span class="nav-number">04</span>Reportes</a>
             </nav>
             <div class="sidebar-bottom"><span class="online-dot"></span><span>Turno de bar</span><span class="role-label">ENCARGADO</span></div>
         </aside>
