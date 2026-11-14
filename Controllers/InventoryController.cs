@@ -4,6 +4,7 @@ using DAS.Models.DTOs;
 using DAS.Models.Enums;
 using DAS.Models.ViewModels;
 using DAS.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -37,12 +38,14 @@ public class InventoryController(
     }
 
     [HttpGet("conteo")]
+    [Authorize(Roles = "Admin,Encargado")]
     public IActionResult Count()
     {
         return View(BuildCountSheet());
     }
 
     [HttpPost("conteo")]
+    [Authorize(Roles = "Admin,Encargado")]
     [ValidateAntiForgeryToken]
     public IActionResult Count(PhysicalCountSheetViewModel sheet)
     {
@@ -80,6 +83,7 @@ public class InventoryController(
 
     //Conteo rápido de un producto desde el tablero; [Bind] limita los campos que se aceptan del formulario
     [HttpPost("conteo/producto")]
+    [Authorize(Roles = "Admin,Encargado")]
     [ValidateAntiForgeryToken]
     public IActionResult RegisterCount([Bind(nameof(PhysicalCountInputViewModel.ProductId), nameof(PhysicalCountInputViewModel.ActualStock))] PhysicalCountInputViewModel input)
     {

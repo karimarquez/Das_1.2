@@ -2,6 +2,7 @@ using DAS.Extensions;
 using DAS.Mappings;
 using DAS.Models.ViewModels;
 using DAS.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -17,6 +18,7 @@ public class RecipesController(IRecipeService recipeService, IProductService pro
     }
 
     [HttpPost("{recipeId:int}/preparar")]
+    [Authorize(Roles = "Admin,Encargado")]
     [ValidateAntiForgeryToken]
     public IActionResult Prepare(RecipeConsumptionInputViewModel input)
     {
@@ -40,12 +42,14 @@ public class RecipesController(IRecipeService recipeService, IProductService pro
     }
 
     [HttpGet("nueva")]
+    [Authorize(Roles = "Admin,Encargado")]
     public IActionResult Create()
     {
         return View(PrepareForm(new RecipeFormViewModel()));
     }
 
     [HttpPost("nueva")]
+    [Authorize(Roles = "Admin,Encargado")]
     [ValidateAntiForgeryToken]
     public IActionResult Create(RecipeFormViewModel input)
     {

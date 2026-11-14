@@ -9,3 +9,5 @@ obj/
 *.rsuser
 *.log
 *.db
+*.db-shm
+*.db-wal

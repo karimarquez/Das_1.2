@@ -4,6 +4,7 @@ using DAS.Mappings;
 using DAS.Models.DTOs;
 using DAS.Models.ViewModels;
 using DAS.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -31,12 +32,14 @@ public class ProductsController(
     }
 
     [HttpGet("nuevo")]
+    [Authorize(Roles = "Admin,Encargado")]
     public IActionResult Create()
     {
         return View(FormView, new ProductFormViewModel());
     }
 
     [HttpPost("nuevo")]
+    [Authorize(Roles = "Admin,Encargado")]
     [ValidateAntiForgeryToken]
     public IActionResult Create(ProductFormViewModel input)
     {
@@ -57,6 +60,7 @@ public class ProductsController(
     }
 
     [HttpGet("{id:int}/editar")]
+    [Authorize(Roles = "Admin,Encargado")]
     public IActionResult Edit(int id)
     {
         var product = productService.GetById(id);
@@ -69,6 +73,7 @@ public class ProductsController(
     }
 
     [HttpPost("{id:int}/editar")]
+    [Authorize(Roles = "Admin,Encargado")]
     [ValidateAntiForgeryToken]
     public IActionResult Edit([FromRoute] int id, ProductFormViewModel input)
     {
@@ -97,6 +102,7 @@ public class ProductsController(
     }
 
     [HttpPost("{id:int}/estado")]
+    [Authorize(Roles = "Admin,Encargado")]
     [ValidateAntiForgeryToken]
     public IActionResult ToggleActive(int id)
     {

@@ -1,3 +1,4 @@
+
 @model InventoryDashboardViewModel
 @{
     ViewData["Title"] = "Inventario";
@@ -11,9 +12,12 @@
         <p class="muted">Existencias y actividad del área de bebidas.</p>
     </div>
     <div class="heading-actions">
-        <a class="button button-secondary" asp-controller="Products" asp-action="Create">+ Producto</a>
-        <a class="button button-secondary" asp-action="Count">Conteo de cierre</a>
-        <button class="button button-primary" type="button" data-bs-toggle="modal" data-bs-target="#movementModal">+ Registrar movimiento</button>
+        @if (User.IsInRole("Admin") || User.IsInRole("Encargado"))
+        {
+            <a class="button button-secondary" asp-controller="Products" asp-action="Create">+ Producto</a>
+            <a class="button button-secondary" asp-action="Count">Conteo de cierre</a>
+            <button class="button button-primary" type="button" data-bs-toggle="modal" data-bs-target="#movementModal">+ Registrar movimiento</button>
+        }
     </div>
 </section>
 
@@ -77,7 +81,12 @@
                         <td class="location-cell">@product.Location</td>
                         <td><div class="stock-cell"><strong>@product.Stock.ToString("0.##")</strong><span>@product.Unit</span></div><div class="stock-track"><span class="@(isLow ? "stock-fill stock-fill-low" : "stock-fill")" style="width: @percent.ToString("0")%"></span></div></td>
                         <td><span class="status-pill @(isLow ? "status-low" : "status-ok")">@(isLow ? "Reponer" : "Disponible")</span></td>
-                        <td><button class="icon-button count-button" type="button" title="Registrar conteo físico" aria-label="Registrar conteo físico de @product.Name" data-product-id="@product.Id" data-product-name="@product.Name" data-current-stock="@product.Stock" data-bs-toggle="modal" data-bs-target="#countModal">···</button></td>
+                        <td>
+                            @if (User.IsInRole("Admin") || User.IsInRole("Encargado"))
+                            {
+                                <button class="icon-button count-button" type="button" title="Registrar conteo físico" aria-label="Registrar conteo físico de @product.Name" data-product-id="@product.Id" data-product-name="@product.Name" data-current-stock="@product.Stock" data-bs-toggle="modal" data-bs-target="#countModal">···</button>
+                            }
+                        </td>
                     </tr>
                 }
                 </tbody>
@@ -107,6 +116,8 @@
     </aside>
 </div>
 
+@if (User.IsInRole("Admin") || User.IsInRole("Encargado"))
+{
 <div class="modal fade" id="movementModal" tabindex="-1" aria-labelledby="movementModalTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered"><div class="modal-content app-modal">
         <form asp-controller="Movements" asp-action="Register" method="post">
@@ -133,6 +144,7 @@
         </form>
     </div></div>
 </div>
+}
 
 @section Scripts {
     <script>

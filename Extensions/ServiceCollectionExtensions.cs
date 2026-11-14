@@ -15,17 +15,14 @@ public static class ServiceCollectionExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        //Singleton: los datos en memoria deben conservarse entre peticiones
-        services.AddSingleton<InMemoryInventoryStore>();
-
-        //Scoped: una instancia por petición HTTP; los controladores dependen solo de las interfaces
+        //Scoped: una instancia de los servicios y del contexto por petición HTTP.
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IMovementService, MovementService>();
         services.AddScoped<IPhysicalCountService, PhysicalCountService>();
         services.AddScoped<IRecipeService, RecipeService>();
         services.AddScoped<IReportService, ReportService>();
         services.AddDbContext<AppDbContext>(options =>
-        options.UseSqlite(configuration.GetConnectionString("DefaultConnection")));
+            options.UseSqlite(configuration.GetConnectionString("DefaultConnection")));
         return services;
     }
 }

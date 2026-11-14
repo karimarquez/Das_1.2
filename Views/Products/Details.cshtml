@@ -13,10 +13,13 @@
     </div>
     <div class="heading-actions">
         <a class="button button-secondary" asp-controller="Inventory" asp-action="Index">Volver al inventario</a>
-        <a class="button button-secondary" asp-action="Edit" asp-route-id="@product.Id">Editar</a>
-        <form asp-action="ToggleActive" asp-route-id="@product.Id" method="post">
-            <button class="button @(product.IsActive ? "button-secondary" : "button-primary")" type="submit">@(product.IsActive ? "Desactivar" : "Reactivar")</button>
-        </form>
+        @if (User.IsInRole("Admin") || User.IsInRole("Encargado"))
+        {
+            <a class="button button-secondary" asp-action="Edit" asp-route-id="@product.Id">Editar</a>
+            <form asp-action="ToggleActive" asp-route-id="@product.Id" method="post">
+                <button class="button @(product.IsActive ? "button-secondary" : "button-primary")" type="submit">@(product.IsActive ? "Desactivar" : "Reactivar")</button>
+            </form>
+        }
     </div>
 </section>
 
@@ -80,7 +83,7 @@
 
     <aside class="panel">
         <div class="panel-heading"><div><p class="eyebrow">ACTUALIZAR EXISTENCIAS</p><h2>Registrar movimiento</h2></div></div>
-        @if (product.IsActive)
+        @if (product.IsActive && (User.IsInRole("Admin") || User.IsInRole("Encargado")))
         {
             <form asp-controller="Movements" asp-action="Register" method="post" class="form-stack px-4 pb-4">
                 <input type="hidden" name="ProductId" value="@product.Id" />

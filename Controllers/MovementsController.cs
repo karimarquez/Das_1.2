@@ -3,6 +3,7 @@ using DAS.Mappings;
 using DAS.Models.DTOs;
 using DAS.Models.ViewModels;
 using DAS.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -29,6 +30,7 @@ public class MovementsController(IMovementService movementService, IProductServi
     }
 
     [HttpPost("registrar")]
+    [Authorize(Roles = "Admin,Encargado")]
     [ValidateAntiForgeryToken]
     public IActionResult Register([FromForm] MovementInputViewModel input, [FromForm] string? returnUrl)
     {

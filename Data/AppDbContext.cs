@@ -1,9 +1,11 @@
 using DAS.Models.Entities;
+using DAS.Models.Auth;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace DAS.Data;
 
-public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<ApplicationUser>(options)
 {
     public DbSet<InventoryProduct> Products => Set<InventoryProduct>();
     public DbSet<InventoryMovement> Movements => Set<InventoryMovement>();
@@ -14,6 +16,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     protected override void OnModelCreating(ModelBuilder b)
     {
+        base.OnModelCreating(b);
+
         b.Entity<InventoryProduct>(e =>
         {
             e.HasIndex(p => p.Name).IsUnique();

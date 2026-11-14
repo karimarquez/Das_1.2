@@ -1,0 +1,33 @@
+@model IReadOnlyList<DAS.Models.Auth.UserRoleViewModel>
+@{
+    ViewData["Title"] = "Usuarios y permisos";
+}
+<section class="page-heading">
+    <div><p class="eyebrow">ADMINISTRACIÓN</p><h1>Usuarios y permisos</h1></div>
+</section>
+<div class="table-responsive">
+    <table class="table align-middle">
+        <thead><tr><th>Correo</th><th>Rol</th><th>Actualizar permisos</th></tr></thead>
+        <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.Email</td>
+                <td>@user.Role</td>
+                <td>
+                    <form asp-action="SetRole" method="post" class="d-flex gap-2">
+                        <input type="hidden" name="userId" value="@user.Id" />
+                        <select name="role" class="form-select" aria-label="Rol para @user.Email">
+                            @foreach (var role in new[] { "Admin", "Encargado", "Consulta" })
+                            {
+                                <option value="@role" selected="@(user.Role == role)">@role</option>
+                            }
+                        </select>
+                        <button class="btn btn-primary" type="submit">Guardar</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

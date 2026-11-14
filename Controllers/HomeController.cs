@@ -1,11 +1,13 @@
 using System.Diagnostics;
 using DAS.Models.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DAS.Controllers;
 
 public class HomeController : Controller
 {
+    [AllowAnonymous]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
@@ -13,6 +15,7 @@ public class HomeController : Controller
     }
 
     //Páginas de estado: UseStatusCodePagesWithReExecute("/error/{0}") vuelve a ejecutar esta acción
+    [AllowAnonymous]
     [Route("error/{code:int}")]
     public IActionResult Status(int code)
     {

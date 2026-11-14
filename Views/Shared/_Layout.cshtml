@@ -17,12 +17,23 @@
             <a class="brand-lockup" asp-controller="Inventory" asp-action="Index"><span class="brand-mark">PN</span><span><strong>Pipiris Nais</strong><small>BAR · INVENTARIO</small></span></a>
             <div class="nav-caption">OPERACIÓN</div>
             <nav class="side-nav" aria-label="Navegación principal">
-                <a class="side-link @(currentController is "Inventory" or "Products" ? "active" : "")" asp-controller="Inventory" asp-action="Index"><span class="nav-number">01</span>Inventario</a>
-                <a class="side-link @(currentController == "Movements" ? "active" : "")" asp-controller="Movements" asp-action="Index"><span class="nav-number">02</span>Movimientos</a>
-                <a class="side-link @(currentController == "Recipes" ? "active" : "")" asp-controller="Recipes" asp-action="Index"><span class="nav-number">03</span>Recetas</a>
-                <a class="side-link @(currentController == "Reports" ? "active" : "")" asp-controller="Reports" asp-action="Index"><span class="nav-number">04</span>Reportes</a>
+                <a class="side-link @(currentController is "Inventory" or "Products" ? "active" : "")" asp-controller="Inventory" asp-action="Index">Inventario</a>
+                <a class="side-link @(currentController == "Movements" ? "active" : "")" asp-controller="Movements" asp-action="Index">Movimientos</a>
+                <a class="side-link @(currentController == "Recipes" ? "active" : "")" asp-controller="Recipes" asp-action="Index">Recetas</a>
+                <a class="side-link @(currentController == "Reports" ? "active" : "")" asp-controller="Reports" asp-action="Index">Reportes</a>
             </nav>
-            <div class="sidebar-bottom"><span class="online-dot"></span><span>Turno de bar</span><span class="role-label">ENCARGADO</span></div>
+            <div class="sidebar-bottom">
+                <span class="online-dot"></span>
+                <span>@(User.Identity?.Name ?? "Sesión activa")</span>
+                <span class="role-label">@(User.IsInRole("Admin") ? "ADMIN" : User.IsInRole("Encargado") ? "ENCARGADO" : "CONSULTA")</span>
+                @if (User.IsInRole("Admin"))
+                {
+                    <a class="side-link" asp-controller="Admin" asp-action="Users">Usuarios</a>
+                }
+                <form asp-controller="Account" asp-action="Logout" method="post">
+                    <button class="button button-quiet full-width" type="submit">Cerrar sesión</button>
+                </form>
+            </div>
         </aside>
         <main class="main-content" role="main">
             <header class="topbar"><span>Control operativo</span><time>@DateTime.Now.ToString("dddd, dd 'de' MMMM", new System.Globalization.CultureInfo("es-SV"))</time></header>

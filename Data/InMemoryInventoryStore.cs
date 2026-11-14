@@ -3,7 +3,7 @@ using DAS.Models.Enums;
 
 namespace DAS.Data;
 
-//Almacenamiento temporal en memoria; en la fase de persistencia se reemplaza por un DbContext de EF Core
+//Genera datos de demostración que se copian a SQLite en el primer inicio.
 public sealed class InMemoryInventoryStore
 {
     private int _lastProductId;
