@@ -23,7 +23,7 @@ public sealed class AccountController(
             return View(input);
 
         var result = await signInManager.PasswordSignInAsync(
-            input.Email, input.Password, input.RememberMe, lockoutOnFailure: true);
+            input.Email.Trim(), input.Password, input.RememberMe, lockoutOnFailure: true);
         if (result.Succeeded)
         {
             if (!string.IsNullOrEmpty(input.ReturnUrl) && Url.IsLocalUrl(input.ReturnUrl))

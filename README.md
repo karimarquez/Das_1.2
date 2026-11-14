@@ -17,14 +17,14 @@ La aplicación aplica las migraciones y carga datos de demostración en SQLite e
 
 Registra una cuenta desde `/cuenta/registro`. Las cuentas nuevas tienen el rol `Consulta` y pueden ver el inventario, pero no realizar cambios.
 
-Para crear un administrador local, configura sus credenciales en User Secrets (elige tu propia contraseña segura):
+Para que una cuenta pueda iniciar sesión en cada clon con la misma credencial, configura el mismo correo y contraseña en User Secrets de cada equipo. User Secrets es local y no se sube a Git; la aplicación crea esa cuenta con rol `Admin` cuando todavía no existe en la base SQLite local:
 
 ```powershell
-dotnet user-secrets set "Auth:BootstrapAdminEmail" "admin@local.test"
-dotnet user-secrets set "Auth:BootstrapAdminPassword" "<tu-contraseña-segura>"
+dotnet user-secrets set "Auth:BootstrapAdminEmail" "tu-correo@ejemplo.com"
+dotnet user-secrets set "Auth:BootstrapAdminPassword" "<la-misma-contraseña-segura>"
 ```
 
-Al iniciar la aplicación, ese usuario recibe el rol `Admin`. Desde el menú **Usuarios**, un administrador puede asignar los roles `Admin`, `Encargado` o `Consulta`. Los formularios de escritura requieren rol `Admin` o `Encargado`.
+Cada integrante debe ejecutar esos comandos en su clon y usar la misma contraseña acordada por un canal privado, nunca guardarla en el repositorio. Al iniciar, si la cuenta ya existe, se conserva su contraseña y se le asigna el rol `Admin` si aún no lo tiene. Las cuentas nuevas registradas desde `/cuenta/registro` tienen el rol `Consulta`. Desde el menú **Usuarios**, un administrador puede asignar los roles `Admin`, `Encargado` o `Consulta`; los formularios de escritura requieren rol `Admin` o `Encargado`.
 
 ## API JWT
 

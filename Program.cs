@@ -98,10 +98,14 @@ await using (var scope = app.Services.CreateAsyncScope())
     foreach (var role in new[] { "Admin", "Encargado", "Consulta" })
     {
         if (!await roleManager.RoleExistsAsync(role))
-            await roleManager.CreateAsync(new IdentityRole(role));
+        {
+            var result = await roleManager.CreateAsync(new IdentityRole(role));
+            if (!result.Succeeded)
+                throw new InvalidOperationException($"No se pudo crear el rol {role}: {string.Join("; ", result.Errors.Select(error => error.Description))}");
+        }
     }
 
-    var adminEmail = app.Configuration["Auth:BootstrapAdminEmail"];
+    var adminEmail = app.Configuration["Auth:BootstrapAdminEmail"]?.Trim();
     var adminPassword = app.Configuration["Auth:BootstrapAdminPassword"];
     if (!string.IsNullOrWhiteSpace(adminEmail) || !string.IsNullOrWhiteSpace(adminPassword))
     {
@@ -117,7 +121,11 @@ await using (var scope = app.Services.CreateAsyncScope())
                 throw new InvalidOperationException($"No se pudo crear el administrador inicial: {string.Join("; ", result.Errors.Select(error => error.Description))}");
         }
         if (!await userManager.IsInRoleAsync(admin, "Admin"))
-            await userManager.AddToRoleAsync(admin, "Admin");
+        {
+            var result = await userManager.AddToRoleAsync(admin, "Admin");
+            if (!result.Succeeded)
+                throw new InvalidOperationException($"No se pudo asignar el rol Admin: {string.Join("; ", result.Errors.Select(error => error.Description))}");
+        }
     }
 }
 
