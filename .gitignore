@@ -11,3 +11,7 @@ obj/
 *.db
 *.db-shm
 *.db-wal
+
+## Resultados de pruebas
+TestResults/
+*.trx
