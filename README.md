@@ -85,7 +85,7 @@ Al iniciar la aplicación, ese usuario recibe el rol `Admin`. Desde el menú **U
 
 ## API JWT
 
-`POST /api/auth/token` recibe JSON con `email` y `password` y devuelve un token Bearer. Úsalo en `GET /api/inventario/productos`, que acepta `search`, `page` y `pageSize`:
+`POST /api/auth/token` recibe JSON con `email` y `password` y devuelve un token Bearer. Úsar en `GET /api/inventario/productos`, que acepta `search`, `page` y `pageSize`:
 
 ```http
 Authorization: Bearer <access_token>
