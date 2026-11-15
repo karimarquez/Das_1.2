@@ -23,7 +23,7 @@ public class InventoryController(
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
         var products = await productService.GetActiveAsync(cancellationToken);
-        var today = await movementService.SearchAsync(new MovementQueryDto(From: DateTime.Today, To: DateTime.Today), cancellationToken);
+        var today = await movementService.CountByTypeAsync(DateTime.Today, DateTime.Today, cancellationToken);
         var recent = await movementService.SearchAsync(new MovementQueryDto(Take: options.Value.RecentMovementsCount), cancellationToken);
 
         var model = new InventoryDashboardViewModel
@@ -32,8 +32,10 @@ public class InventoryController(
             RecentMovements = recent,
             ProductCount = products.Count,
             LowStockCount = products.Count(product => product.IsLowStock),
-            TodayMovementCount = today.Count,
-            TodayConsumptionCount = today.Count(movement => movement.Type == MovementType.Consumo)
+            TodayMovementCount = today.Sum(count => count.Count),
+            TodayConsumptionCount = today
+                .Where(count => count.Type == MovementType.Consumo)
+                .Sum(count => count.Count)
         };
 
         return View(model);

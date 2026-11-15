@@ -144,6 +144,23 @@ public class PersistenceTests : IDisposable
             new MovementQueryDto(Type: MovementType.Consumo, From: new DateTime(2026, 11, 2), To: new DateTime(2026, 11, 3)));
 
         Assert.Equal(new[] { "Turno 2", "Turno 1" }, found.Select(movement => movement.Reason));
+
+        var repository = new MovementRepository(query);
+        var page = await repository.SearchPageAsync(
+            new MovementQueryDto(Type: MovementType.Consumo, From: new DateTime(2026, 11, 2), To: new DateTime(2026, 11, 3)),
+            page: 2,
+            pageSize: 1);
+        Assert.Equal(2, page.TotalCount);
+        Assert.Equal(2, page.Page);
+        Assert.Equal("Turno 1", Assert.Single(page.Items).Reason);
+
+        var groupedCounts = await repository.CountByProductAndTypeAsync(
+            new DateTime(2026, 11, 2),
+            new DateTime(2026, 11, 3));
+        var consumptionCount = Assert.Single(groupedCounts);
+        Assert.Equal("Jarabe natural", consumptionCount.ProductName);
+        Assert.Equal(MovementType.Consumo, consumptionCount.Type);
+        Assert.Equal(2, consumptionCount.Count);
     }
 
     [Fact]

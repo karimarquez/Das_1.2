@@ -17,9 +17,13 @@ public sealed class RecipeRepository(AppDbContext context) : Repository<Recipe>(
             .Include(recipe => recipe.Ingredients)
             .FirstOrDefaultAsync(recipe => recipe.Id == id, cancellationToken);
 
-    public Task<bool> NameExistsAsync(string name, CancellationToken cancellationToken = default)
+    public Task<Recipe?> GetTrackedWithIngredientsAsync(int id, CancellationToken cancellationToken = default) =>
+        Set.Include(recipe => recipe.Ingredients)
+            .FirstOrDefaultAsync(recipe => recipe.Id == id, cancellationToken);
+
+    public Task<bool> NameExistsAsync(string name, int? excludeId = null, CancellationToken cancellationToken = default)
     {
         var normalized = name.Trim().ToLower();
-        return Set.AnyAsync(recipe => recipe.Name.ToLower() == normalized, cancellationToken);
+        return Set.AnyAsync(recipe => recipe.Id != excludeId && recipe.Name.ToLower() == normalized, cancellationToken);
     }
 }

@@ -13,16 +13,23 @@ namespace DAS.Web.Controllers;
 [Route("movimientos")]
 public class MovementsController(IMovementService movementService, IProductQueryService productService) : Controller
 {
+    private const int PageSize = 25;
+
     [HttpGet("")]
     public async Task<IActionResult> Index([FromQuery] MovementFilterViewModel filter, CancellationToken cancellationToken)
     {
-        IReadOnlyList<MovementDto> movements = ModelState.IsValid ? await movementService.SearchAsync(filter.ToQuery(), cancellationToken) : [];
+        var page = ModelState.IsValid
+            ? await movementService.SearchPageAsync(filter.ToQuery(), filter.Page, PageSize, cancellationToken)
+            : new MovementPageDto([], 1, PageSize, 0);
+        filter.Page = page.Page;
         var products = await productService.GetAllAsync(cancellationToken);
 
         var model = new MovementListViewModel
         {
             Filter = filter,
-            Movements = movements,
+            Movements = page.Items,
+            PageSize = page.PageSize,
+            TotalCount = page.TotalCount,
             ProductOptions = products
                 .Select(product => new SelectListItem(product.IsActive ? product.Name : $"{product.Name} (inactivo)", product.Id.ToString()))
                 .ToList()

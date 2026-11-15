@@ -27,6 +27,19 @@ public sealed class RecipeService(
         return all.Select(recipe => recipe.ToDto(names)).ToList();
     }
 
+    public async Task<RecipeDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var recipe = await recipes.GetWithIngredientsAsync(id, cancellationToken);
+        if (recipe is null)
+        {
+            return null;
+        }
+
+        var productIds = recipe.Ingredients.Select(ingredient => ingredient.ProductId).Distinct().ToList();
+        var names = (await products.GetByIdsAsync(productIds, cancellationToken)).ToDictionary(product => product.Id);
+        return recipe.ToDto(names);
+    }
+
     public async Task<ServiceResult<RecipePreparationDto>> PrepareAsync(PrepareRecipeDto input, CancellationToken cancellationToken = default)
     {
         if (input.Servings is < 1 or > 1000)
@@ -97,19 +110,99 @@ public sealed class RecipeService(
 
     public async Task<ServiceResult<RecipeDto>> CreateAsync(SaveRecipeDto input, CancellationToken cancellationToken = default)
     {
+        var validation = await ValidateInputAsync(input, null, cancellationToken);
+        if (!validation.Succeeded)
+        {
+            return ServiceResult<RecipeDto>.Fail(validation.Error!, validation.Field);
+        }
+
+        var catalog = validation.Value!;
+        var ingredients = input.Ingredients.Select(item =>
+        {
+            var product = catalog[item.ProductId];
+            return new RecipeIngredient
+            {
+                ProductId = product.Id,
+                QuantityPerServing = item.QuantityPerServing,
+                BaseUnit = product.BaseUnit
+            };
+        }).ToList();
+
+        var recipe = new Recipe { Name = input.Name, Description = input.Description, Ingredients = ingredients };
+        recipes.Add(recipe);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Receta {RecipeId} creada: {RecipeName}", recipe.Id, recipe.Name);
+        return ServiceResult<RecipeDto>.Ok(recipe.ToDto(catalog));
+    }
+
+    public async Task<ServiceResult<RecipeDto>> UpdateAsync(int id, SaveRecipeDto input, CancellationToken cancellationToken = default)
+    {
+        var recipe = await recipes.GetTrackedWithIngredientsAsync(id, cancellationToken);
+        if (recipe is null)
+        {
+            return ServiceResult<RecipeDto>.Fail("La receta no existe.");
+        }
+
+        var validation = await ValidateInputAsync(input, id, cancellationToken);
+        if (!validation.Succeeded)
+        {
+            return ServiceResult<RecipeDto>.Fail(validation.Error!, validation.Field);
+        }
+
+        var catalog = validation.Value!;
+        recipe.Name = input.Name;
+        recipe.Description = input.Description;
+        recipe.Ingredients.Clear();
+        recipe.Ingredients.AddRange(input.Ingredients.Select(item =>
+        {
+            var product = catalog[item.ProductId];
+            return new RecipeIngredient
+            {
+                ProductId = product.Id,
+                QuantityPerServing = item.QuantityPerServing,
+                BaseUnit = product.BaseUnit
+            };
+        }));
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Receta {RecipeId} actualizada", recipe.Id);
+        return ServiceResult<RecipeDto>.Ok(recipe.ToDto(catalog));
+    }
+
+    public async Task<ServiceResult> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var recipe = await recipes.GetTrackedWithIngredientsAsync(id, cancellationToken);
+        if (recipe is null)
+        {
+            return ServiceResult.Fail("La receta no existe.");
+        }
+
+        recipes.Remove(recipe);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Receta {RecipeId} eliminada", recipe.Id);
+        return ServiceResult.Ok();
+    }
+
+    private async Task<ServiceResult<Dictionary<int, InventoryProduct>>> ValidateInputAsync(
+        SaveRecipeDto input,
+        int? excludeId,
+        CancellationToken cancellationToken)
+    {
         if (input.Ingredients.Count == 0)
         {
-            return ServiceResult<RecipeDto>.Fail("Agrega al menos un ingrediente a la receta.");
+            return ServiceResult<Dictionary<int, InventoryProduct>>.Fail("Agrega al menos un ingrediente a la receta.");
         }
 
         if (input.Ingredients.GroupBy(ingredient => ingredient.ProductId).Any(group => group.Count() > 1))
         {
-            return ServiceResult<RecipeDto>.Fail("Cada producto solo puede aparecer una vez en la receta.");
+            return ServiceResult<Dictionary<int, InventoryProduct>>.Fail("Cada producto solo puede aparecer una vez en la receta.");
         }
 
-        if (await recipes.NameExistsAsync(input.Name, cancellationToken))
+        if (await recipes.NameExistsAsync(input.Name, excludeId, cancellationToken))
         {
-            return ServiceResult<RecipeDto>.Fail("Ya existe una receta con ese nombre.", nameof(SaveRecipeDto.Name));
+            return ServiceResult<Dictionary<int, InventoryProduct>>.Fail("Ya existe una receta con ese nombre.", nameof(SaveRecipeDto.Name));
         }
 
         var productIds = input.Ingredients.Select(item => item.ProductId).ToList();
@@ -118,32 +211,16 @@ public sealed class RecipeService(
             .ToDictionary(product => product.Id);
         if (catalog.Count != productIds.Count)
         {
-            return ServiceResult<RecipeDto>.Fail("Uno de los ingredientes no existe o está inactivo.");
+            return ServiceResult<Dictionary<int, InventoryProduct>>.Fail("Uno de los ingredientes no existe o está inactivo.");
         }
 
-        var ingredients = new List<RecipeIngredient>();
-        foreach (var item in input.Ingredients)
+        var invalidIngredient = input.Ingredients.FirstOrDefault(item => item.QuantityPerServing <= 0);
+        if (invalidIngredient is not null)
         {
-            var product = catalog[item.ProductId];
-            if (item.QuantityPerServing <= 0)
-            {
-                return ServiceResult<RecipeDto>.Fail($"La cantidad de {product.Name} debe ser mayor que cero.");
-            }
-
-            //La receta guarda la unidad base vigente del producto para validar la conversión al preparar
-            ingredients.Add(new RecipeIngredient
-            {
-                ProductId = product.Id,
-                QuantityPerServing = item.QuantityPerServing,
-                BaseUnit = product.BaseUnit
-            });
+            return ServiceResult<Dictionary<int, InventoryProduct>>.Fail(
+                $"La cantidad de {catalog[invalidIngredient.ProductId].Name} debe ser mayor que cero.");
         }
 
-        var recipe = new Recipe { Name = input.Name, Description = input.Description, Ingredients = ingredients };
-        recipes.Add(recipe);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        logger.LogInformation("Receta {RecipeId} creada: {RecipeName}", recipe.Id, recipe.Name);
-        return ServiceResult<RecipeDto>.Ok(recipe.ToDto(catalog));
+        return ServiceResult<Dictionary<int, InventoryProduct>>.Ok(catalog);
     }
 }

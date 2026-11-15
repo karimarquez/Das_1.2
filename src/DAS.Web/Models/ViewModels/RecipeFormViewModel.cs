@@ -9,6 +9,11 @@ public class RecipeFormViewModel : IValidatableObject
 {
     public const int MaxIngredients = 6;
 
+    [BindNever]
+    public int Id { get; set; }
+
+    public bool IsNew => Id == 0;
+
     [Display(Name = "Nombre de la receta")]
     [Required(ErrorMessage = "Escribe el nombre de la receta.")]
     [StringLength(80, MinimumLength = 3, ErrorMessage = "El nombre debe tener entre {2} y {1} caracteres.")]
@@ -26,6 +31,12 @@ public class RecipeFormViewModel : IValidatableObject
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
+        if (Ingredients.Count > MaxIngredients)
+        {
+            yield return new ValidationResult($"Una receta admite como máximo {MaxIngredients} ingredientes.");
+            yield break;
+        }
+
         if (!Ingredients.Any(ingredient => ingredient.ProductId.HasValue))
         {
             yield return new ValidationResult("Agrega al menos un ingrediente a la receta.");

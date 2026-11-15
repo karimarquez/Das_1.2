@@ -69,6 +69,68 @@ public class RecipesController(IRecipeService recipeService, IProductQueryServic
         return View(await PrepareFormAsync(input, cancellationToken));
     }
 
+    [HttpGet("{id:int}/editar")]
+    [Authorize(Roles = AppRoles.Operadores)]
+    public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
+    {
+        var recipe = await recipeService.GetByIdAsync(id, cancellationToken);
+        if (recipe is null)
+        {
+            return NotFound();
+        }
+
+        return View("Create", await PrepareFormAsync(recipe.ToFormViewModel(), cancellationToken));
+    }
+
+    [HttpPost("{id:int}/editar")]
+    [Authorize(Roles = AppRoles.Operadores)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit([FromRoute] int id, RecipeFormViewModel input, CancellationToken cancellationToken)
+    {
+        if (await recipeService.GetByIdAsync(id, cancellationToken) is null)
+        {
+            return NotFound();
+        }
+
+        input.Id = id;
+        if (ModelState.IsValid)
+        {
+            var result = await recipeService.UpdateAsync(id, input.ToDto(), cancellationToken);
+            if (result.Succeeded)
+            {
+                TempData.Success($"La receta {result.Value!.Name} se actualizó.");
+                return RedirectToAction(nameof(Index));
+            }
+
+            ModelState.AddServiceError(result);
+        }
+
+        return View("Create", await PrepareFormAsync(input, cancellationToken));
+    }
+
+    [HttpPost("{id:int}/eliminar")]
+    [Authorize(Roles = AppRoles.Operadores)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    {
+        if (await recipeService.GetByIdAsync(id, cancellationToken) is null)
+        {
+            return NotFound();
+        }
+
+        var result = await recipeService.DeleteAsync(id, cancellationToken);
+        if (!result.Succeeded)
+        {
+            TempData.Error(result.Error!);
+        }
+        else
+        {
+            TempData.Success("La receta se eliminó.");
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
+
     private async Task<RecipeFormViewModel> PrepareFormAsync(RecipeFormViewModel form, CancellationToken cancellationToken)
     {
         while (form.Ingredients.Count < RecipeFormViewModel.MaxIngredients)
@@ -76,8 +138,15 @@ public class RecipesController(IRecipeService recipeService, IProductQueryServic
             form.Ingredients.Add(new RecipeIngredientInputViewModel());
         }
 
-        form.ProductOptions = (await productService.GetActiveAsync(cancellationToken))
-            .Select(product => new SelectListItem($"{product.Name} ({product.BaseUnit})", product.Id.ToString()))
+        var selectedIds = form.Ingredients
+            .Where(ingredient => ingredient.ProductId.HasValue)
+            .Select(ingredient => ingredient.ProductId!.Value)
+            .ToHashSet();
+        form.ProductOptions = (await productService.GetAllAsync(cancellationToken))
+            .Where(product => product.IsActive || selectedIds.Contains(product.Id))
+            .Select(product => new SelectListItem(
+                $"{product.Name} ({product.BaseUnit}){(product.IsActive ? string.Empty : " (inactivo)")}",
+                product.Id.ToString()))
             .ToList();
 
         return form;

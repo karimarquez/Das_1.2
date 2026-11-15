@@ -8,5 +8,7 @@ public interface IRecipeRepository : IRepository<Recipe>
 
     Task<Recipe?> GetWithIngredientsAsync(int id, CancellationToken cancellationToken = default);
 
-    Task<bool> NameExistsAsync(string name, CancellationToken cancellationToken = default);
+    Task<Recipe?> GetTrackedWithIngredientsAsync(int id, CancellationToken cancellationToken = default);
+
+    Task<bool> NameExistsAsync(string name, int? excludeId = null, CancellationToken cancellationToken = default);
 }

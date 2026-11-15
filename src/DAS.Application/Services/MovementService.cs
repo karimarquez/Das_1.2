@@ -20,6 +20,27 @@ public sealed class MovementService(
     public async Task<IReadOnlyList<MovementDto>> SearchAsync(MovementQueryDto query, CancellationToken cancellationToken = default) =>
         (await movements.SearchAsync(query, cancellationToken)).Select(movement => movement.ToDto()).ToList();
 
+    public async Task<MovementPageDto> SearchPageAsync(
+        MovementQueryDto query,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        var result = await movements.SearchPageAsync(query, page, pageSize, cancellationToken);
+        return new MovementPageDto(
+            result.Items.Select(movement => movement.ToDto()).ToList(),
+            result.Page,
+            pageSize,
+            result.TotalCount);
+    }
+
+    public Task<IReadOnlyList<MovementCountDto>> CountByTypeAsync(
+        DateTime from,
+        DateTime to,
+        CancellationToken cancellationToken = default) =>
+        movements.CountByTypeAsync(from, to, cancellationToken);
+
     public async Task<ServiceResult<MovementDto>> RegisterAsync(RegisterMovementDto input, CancellationToken cancellationToken = default)
     {
         if (input.Type is not (MovementType.Entrada or MovementType.Consumo or MovementType.Merma))

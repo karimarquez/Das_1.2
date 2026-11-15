@@ -21,6 +21,9 @@ public class MovementFilterViewModel : IValidatableObject
     [DataType(DataType.Date)]
     public DateTime? To { get; set; }
 
+    [Range(1, int.MaxValue)]
+    public int Page { get; set; } = 1;
+
     public bool HasFilters => ProductId.HasValue || Type.HasValue || From.HasValue || To.HasValue;
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

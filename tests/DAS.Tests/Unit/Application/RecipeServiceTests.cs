@@ -129,4 +129,76 @@ public class RecipeServiceTests
         Assert.Equal("lb", Assert.Single(recipe.Ingredients).BaseUnit);
         Assert.Equal("Azúcar", Assert.Single(result.Value!.Ingredients).ProductName);
     }
+
+    [Fact]
+    public async Task Actualizar_ReemplazaIngredientesYPermiteConservarElMismoNombre()
+    {
+        var lime = _inventory.AddProduct("Limón", stock: 10);
+        var sugar = _inventory.AddProduct("Azúcar", stock: 5, baseUnit: "lb");
+        var recipe = _inventory.AddRecipe("Limonada", (lime, 2));
+
+        var result = await _inventory.RecipeService().UpdateAsync(
+            recipe.Id,
+            new SaveRecipeDto("Limonada", "Con azúcar", [new(sugar.Id, 0.25m)]));
+
+        Assert.True(result.Succeeded);
+        Assert.Equal("Con azúcar", recipe.Description);
+        var ingredient = Assert.Single(recipe.Ingredients);
+        Assert.Equal(sugar.Id, ingredient.ProductId);
+        Assert.Equal(0.25m, ingredient.QuantityPerServing);
+        Assert.Equal("lb", ingredient.BaseUnit);
+        Assert.Equal("Azúcar", Assert.Single(result.Value!.Ingredients).ProductName);
+    }
+
+    [Fact]
+    public async Task Actualizar_ConNombreDeOtraReceta_FallaSinCambiarLaOriginal()
+    {
+        var lime = _inventory.AddProduct("Limón", stock: 10);
+        var original = _inventory.AddRecipe("Limonada", (lime, 2));
+        _inventory.AddRecipe("Agua fresca", (lime, 1));
+
+        var result = await _inventory.RecipeService().UpdateAsync(
+            original.Id,
+            new SaveRecipeDto("Agua fresca", "Duplicada", [new(lime.Id, 3)]));
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(nameof(SaveRecipeDto.Name), result.Field);
+        Assert.Equal("Limonada", original.Name);
+        Assert.Equal(2, Assert.Single(original.Ingredients).QuantityPerServing);
+    }
+
+    [Fact]
+    public async Task Actualizar_RecetaInexistente_Falla()
+    {
+        var lime = _inventory.AddProduct("Limón", stock: 10);
+
+        var result = await _inventory.RecipeService().UpdateAsync(
+            42,
+            new SaveRecipeDto("Limonada", "", [new(lime.Id, 2)]));
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("La receta no existe.", result.Error);
+    }
+
+    [Fact]
+    public async Task Eliminar_RecetaInexistente_Falla()
+    {
+        var result = await _inventory.RecipeService().DeleteAsync(42);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("La receta no existe.", result.Error);
+    }
+
+    [Fact]
+    public async Task Eliminar_RecetaNoEliminaLosProductosNiSusMovimientos()
+    {
+        var lime = _inventory.AddProduct("Limón", stock: 10);
+        var recipe = _inventory.AddRecipe("Limonada", (lime, 2));
+
+        var result = await _inventory.RecipeService().DeleteAsync(recipe.Id);
+
+        Assert.True(result.Succeeded);
+        Assert.Empty(_inventory.Recipes.Items);
+        Assert.Single(_inventory.Products.Items);
+    }
 }

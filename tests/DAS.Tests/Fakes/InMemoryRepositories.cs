@@ -94,15 +94,71 @@ public sealed class InMemoryMovementRepository : InMemoryRepository<InventoryMov
 {
     public Task<IReadOnlyList<InventoryMovement>> SearchAsync(MovementQueryDto query, CancellationToken cancellationToken = default)
     {
-        var found = Items
+        var found = Filter(query);
+        return Result(query.Take is int take ? found.Take(take) : found);
+    }
+
+    public Task<(IReadOnlyList<InventoryMovement> Items, int Page, int TotalCount)> SearchPageAsync(
+        MovementQueryDto query,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        var found = Filter(query).ToList();
+        var totalCount = found.Count;
+        var pageCount = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+        page = Math.Clamp(page, 1, pageCount);
+        IReadOnlyList<InventoryMovement> items = found.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        return Task.FromResult((items, page, totalCount));
+    }
+
+    public Task<IReadOnlyList<MovementReportValueDto>> GetReportValuesAsync(
+        DateTime from,
+        DateTime to,
+        CancellationToken cancellationToken = default) =>
+        Result(Items
+            .Where(movement => movement.RecordedAt >= from.Date && movement.RecordedAt < to.Date.AddDays(1))
+            .Select(movement => new MovementReportValueDto(
+                movement.ProductId,
+                movement.Type,
+                movement.Quantity,
+                movement.StockBefore,
+                movement.StockAfter)));
+
+    public Task<IReadOnlyList<MovementTypeCountDto>> CountByProductAndTypeAsync(
+        DateTime from,
+        DateTime to,
+        CancellationToken cancellationToken = default) =>
+        Result(Items
+            .Where(movement => movement.RecordedAt >= from.Date && movement.RecordedAt < to.Date.AddDays(1))
+            .GroupBy(movement => new { movement.ProductId, movement.ProductName, movement.Type })
+            .OrderBy(group => group.Key.ProductName)
+            .ThenBy(group => group.Key.Type)
+            .Select(group => new MovementTypeCountDto(
+                group.Key.ProductId,
+                group.Key.ProductName,
+                group.Key.Type,
+                group.Count())));
+
+    public Task<IReadOnlyList<MovementCountDto>> CountByTypeAsync(
+        DateTime from,
+        DateTime to,
+        CancellationToken cancellationToken = default) =>
+        Result(Items
+            .Where(movement => movement.RecordedAt >= from.Date && movement.RecordedAt < to.Date.AddDays(1))
+            .GroupBy(movement => movement.Type)
+            .OrderBy(group => group.Key)
+            .Select(group => new MovementCountDto(group.Key, group.Count())));
+
+    private IEnumerable<InventoryMovement> Filter(MovementQueryDto query) =>
+        Items
             .Where(movement => query.ProductId is null || movement.ProductId == query.ProductId)
             .Where(movement => query.Type is null || movement.Type == query.Type)
             .Where(movement => query.From is null || movement.RecordedAt >= query.From.Value.Date)
             .Where(movement => query.To is null || movement.RecordedAt < query.To.Value.Date.AddDays(1))
             .OrderByDescending(movement => movement.RecordedAt)
             .ThenByDescending(movement => movement.Id);
-        return Result(query.Take is int take ? found.Take(take) : found);
-    }
 }
 
 public sealed class InMemoryRecipeRepository : InMemoryRepository<Recipe>, IRecipeRepository
@@ -113,8 +169,11 @@ public sealed class InMemoryRecipeRepository : InMemoryRepository<Recipe>, IReci
     public Task<Recipe?> GetWithIngredientsAsync(int id, CancellationToken cancellationToken = default) =>
         Task.FromResult(Items.FirstOrDefault(recipe => recipe.Id == id));
 
-    public Task<bool> NameExistsAsync(string name, CancellationToken cancellationToken = default) =>
-        Task.FromResult(Items.Any(recipe => string.Equals(recipe.Name, name.Trim(), StringComparison.OrdinalIgnoreCase)));
+    public Task<Recipe?> GetTrackedWithIngredientsAsync(int id, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Items.FirstOrDefault(recipe => recipe.Id == id));
+
+    public Task<bool> NameExistsAsync(string name, int? excludeId = null, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Items.Any(recipe => recipe.Id != excludeId && string.Equals(recipe.Name, name.Trim(), StringComparison.OrdinalIgnoreCase)));
 }
 
 public sealed class InMemoryPhysicalCountRepository : InMemoryRepository<PhysicalCount>, IPhysicalCountRepository

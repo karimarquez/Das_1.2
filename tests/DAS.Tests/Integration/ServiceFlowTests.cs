@@ -77,9 +77,66 @@ public class ServiceFlowTests : IDisposable
         var report = await services.Reports.BuildAsync(ReportPeriod.Mensual, TestData.Now);
 
         var line = Assert.Single(report.Lines, item => item.ProductId == product.Id);
+        Assert.Equal(1, report.EntryCount);
+        Assert.Equal(1, report.WasteCount);
         Assert.Equal(5, line.Entries);
         Assert.Equal(1, line.Waste);
         Assert.Equal(15m, line.WasteCost);
         Assert.Equal(4, line.CurrentStock);
+    }
+
+    [Fact]
+    public async Task ActualizarYEliminarReceta_PersisteCambiosYCascadaIngredientes()
+    {
+        int recipeId;
+        int productId;
+        await using (var context = _database.CreateContext())
+        {
+            var services = new EfServiceSet(context, _database.Clock);
+            var firstProduct = (await services.Products.CreateAsync(TestData.NewProduct("Limón"))).Value!;
+            var secondProduct = (await services.Products.CreateAsync(TestData.NewProduct("Azúcar"))).Value!;
+            productId = secondProduct.Id;
+
+            var recipe = new DAS.Domain.Entities.Recipe
+            {
+                Name = "Limonada",
+                Description = "Original",
+                Ingredients = [new() { ProductId = firstProduct.Id, QuantityPerServing = 1, BaseUnit = firstProduct.BaseUnit }]
+            };
+            context.Recipes.Add(recipe);
+            await context.SaveChangesAsync();
+            recipeId = recipe.Id;
+        }
+
+        await using (var context = _database.CreateContext())
+        {
+            var result = await new EfServiceSet(context, _database.Clock).Recipes.UpdateAsync(
+                recipeId,
+                new SaveRecipeDto("Limonada actualizada", "Nueva descripción", [new(productId, 0.5m)]));
+
+            Assert.True(result.Succeeded);
+        }
+
+        await using (var verify = _database.CreateContext())
+        {
+            var recipe = await verify.Recipes.Include(item => item.Ingredients).SingleAsync(item => item.Id == recipeId);
+            var ingredient = Assert.Single(recipe.Ingredients);
+            Assert.Equal("Limonada actualizada", recipe.Name);
+            Assert.Equal("Nueva descripción", recipe.Description);
+            Assert.Equal(productId, ingredient.ProductId);
+            Assert.Equal(0.5m, ingredient.QuantityPerServing);
+        }
+
+        await using (var context = _database.CreateContext())
+        {
+            var result = await new EfServiceSet(context, _database.Clock).Recipes.DeleteAsync(recipeId);
+            Assert.True(result.Succeeded);
+        }
+
+        await using var deleted = _database.CreateContext();
+        Assert.False(await deleted.Recipes.AnyAsync(recipe => recipe.Id == recipeId));
+        Assert.Equal(0, await deleted.RecipeIngredients.CountAsync(ingredient =>
+            EF.Property<int>(ingredient, "RecipeId") == recipeId));
+        Assert.True(await deleted.Products.AnyAsync(product => product.Id == productId));
     }
 }

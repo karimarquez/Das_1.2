@@ -1,15 +1,16 @@
 @model RecipeFormViewModel
 @{
-    ViewData["Title"] = "Nueva receta";
+    ViewData["Title"] = Model.IsNew ? "Nueva receta" : "Editar receta";
+    var formAction = Model.IsNew ? "Create" : "Edit";
 }
 
 <section class="page-heading">
-    <div><p class="eyebrow">PREPARACIÓN DE BEBIDAS</p><h1>Nueva receta</h1><p class="muted">Indica los ingredientes de una porción en la unidad base de cada producto.</p></div>
+    <div><p class="eyebrow">PREPARACIÓN DE BEBIDAS</p><h1>@(Model.IsNew ? "Nueva receta" : "Editar receta")</h1><p class="muted">Indica los ingredientes de una porción en la unidad base de cada producto.</p></div>
     <a class="button button-secondary" asp-action="Index">Volver a recetas</a>
 </section>
 
 <section class="panel form-panel">
-    <form asp-action="Create" method="post" class="form-stack">
+    <form asp-action="@formAction" asp-route-id="@(Model.IsNew ? null : Model.Id)" method="post" class="form-stack">
         <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
         <div class="product-form">
             <label class="form-label">@Html.DisplayNameFor(m => m.Name)<input asp-for="Name" class="form-control" placeholder="Ej. Refresco de tamarindo" /><span asp-validation-for="Name" class="validation-message"></span></label>
@@ -30,7 +31,7 @@
             }
             <p class="form-hint">Deja vacías las filas que no uses. La unidad entre paréntesis es la unidad base del producto (por ejemplo, oz para licores).</p>
         </div>
-        <div class="form-actions"><a class="button button-secondary" asp-action="Index">Cancelar</a><button class="button button-primary" type="submit">Guardar receta</button></div>
+        <div class="form-actions"><a class="button button-secondary" asp-action="Index">Cancelar</a><button class="button button-primary" type="submit">@(Model.IsNew ? "Guardar receta" : "Guardar cambios")</button></div>
     </form>
 </section>
 

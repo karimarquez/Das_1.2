@@ -21,15 +21,26 @@ public sealed class ReportService(IProductRepository products, IMovementReposito
             ? from.ToString("dddd, dd 'de' MMMM 'de' yyyy", SpanishCulture)
             : from.ToString("MMMM 'de' yyyy", SpanishCulture);
 
-        var periodMovements = await movements.SearchAsync(new MovementQueryDto(From: from, To: to), cancellationToken);
-        var byProduct = periodMovements.ToLookup(movement => movement.ProductId);
-        var reportProducts = await products.ListForReportAsync(byProduct.Select(group => group.Key).ToList(), cancellationToken);
+        const int movementDetailLimit = 12;
+        var periodMovements = await movements.SearchAsync(
+            new MovementQueryDto(From: from, To: to, Take: movementDetailLimit),
+            cancellationToken);
+        var movementValues = await movements.GetReportValuesAsync(from, to, cancellationToken);
+        var movementCounts = await movements.CountByProductAndTypeAsync(from, to, cancellationToken);
+        var byProduct = movementValues.ToLookup(movement => movement.ProductId);
+        var reportProducts = await products.ListForReportAsync(
+            movementCounts.Select(group => group.ProductId).Distinct().ToList(),
+            cancellationToken);
 
-        //Los totales se calculan en memoria porque SQLite guarda los decimales como texto
+        //Los totales decimales se calculan en memoria porque SQLite los guarda como texto.
         var lines = reportProducts
-            .Select(product => BuildLine(product, byProduct[product.Id].ToList()))
+            .Select(product => BuildLine(product, byProduct[product.Id]))
             .OrderBy(line => line.ProductName)
             .ToList();
+
+        int Count(MovementType type) => movementCounts
+            .Where(movement => movement.Type == type)
+            .Sum(movement => movement.Count);
 
         return new InventoryReportDto
         {
@@ -39,17 +50,21 @@ public sealed class ReportService(IProductRepository products, IMovementReposito
             Label = label,
             Movements = periodMovements.Select(movement => movement.ToDto()).ToList(),
             Lines = lines,
-            EntryCount = periodMovements.Count(movement => movement.Type == MovementType.Entrada),
-            ConsumptionCount = periodMovements.Count(movement => movement.Type == MovementType.Consumo),
-            WasteCount = periodMovements.Count(movement => movement.Type == MovementType.Merma),
-            AdjustmentCount = periodMovements.Count(movement => movement.Type == MovementType.Ajuste),
-            ProductsConsumedCount = periodMovements.Where(movement => movement.Type == MovementType.Consumo).Select(movement => movement.ProductId).Distinct().Count(),
+            EntryCount = Count(MovementType.Entrada),
+            ConsumptionCount = Count(MovementType.Consumo),
+            WasteCount = Count(MovementType.Merma),
+            AdjustmentCount = Count(MovementType.Ajuste),
+            ProductsConsumedCount = movementCounts
+                .Where(movement => movement.Type == MovementType.Consumo)
+                .Select(movement => movement.ProductId)
+                .Distinct()
+                .Count(),
             ConsumptionCost = lines.Sum(line => line.ConsumptionCost),
             WasteCost = lines.Sum(line => line.WasteCost)
         };
     }
 
-    private static ProductReportLineDto BuildLine(InventoryProduct product, IReadOnlyList<InventoryMovement> productMovements)
+    private static ProductReportLineDto BuildLine(InventoryProduct product, IEnumerable<MovementReportValueDto> productMovements)
     {
         decimal Total(MovementType type) => productMovements.Where(movement => movement.Type == type).Sum(movement => movement.Quantity);
 
@@ -64,7 +79,9 @@ public sealed class ReportService(IProductRepository products, IMovementReposito
             Entries = Total(MovementType.Entrada),
             Consumption = consumption,
             Waste = waste,
-            Adjustments = productMovements.Where(movement => movement.Type == MovementType.Ajuste).Sum(movement => movement.StockAfter - movement.StockBefore),
+            Adjustments = productMovements
+                .Where(movement => movement.Type == MovementType.Ajuste)
+                .Sum(movement => movement.StockAfter - movement.StockBefore),
             CurrentStock = product.Stock,
             ConsumptionCost = consumption * product.UnitCost,
             WasteCost = waste * product.UnitCost,

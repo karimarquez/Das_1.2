@@ -108,4 +108,21 @@ public class MovementServiceTests
 
         Assert.Equal(new[] { "Turno 2", "Turno 1" }, movements.Select(movement => movement.Reason));
     }
+
+    [Fact]
+    public async Task BusquedaPaginada_DevuelveLaPaginaYElTotalFiltrado()
+    {
+        var product = _inventory.AddProduct("Agua mineral", stock: 10);
+        var service = _inventory.MovementService();
+        await service.RegisterAsync(new RegisterMovementDto(product.Id, MovementType.Consumo, 1, "Turno 1", null));
+        await service.RegisterAsync(new RegisterMovementDto(product.Id, MovementType.Consumo, 1, "Turno 2", null));
+        await service.RegisterAsync(new RegisterMovementDto(product.Id, MovementType.Consumo, 1, "Turno 3", null));
+
+        var page = await service.SearchPageAsync(new MovementQueryDto(ProductId: product.Id), page: 2, pageSize: 2);
+
+        Assert.Equal(2, page.Page);
+        Assert.Equal(2, page.TotalPages);
+        Assert.Equal(3, page.TotalCount);
+        Assert.Equal("Turno 1", Assert.Single(page.Items).Reason);
+    }
 }
