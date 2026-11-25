@@ -1,4 +1,5 @@
 using DAS.Application.DTOs;
+using DAS.Application.Security;
 using DAS.Application.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -8,6 +9,7 @@ namespace DAS.Web.Controllers;
 
 /// <summary>
 /// API REST de productos del inventario. Requiere un token JWT (POST api/auth/token).
+/// Consultar: cualquier usuario autenticado. Crear, editar y eliminar: roles Admin y Encargado.
 /// </summary>
 [ApiController]
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
@@ -16,8 +18,10 @@ public sealed class ApiProductsController(IProductService productService) : Cont
 {
     /// <summary>Lista productos con existencias, con búsqueda y paginación.</summary>
     /// <response code="200">Lista de productos.</response>
+    /// <response code="401">Falta el token o es inválido.</response>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<ProductStockDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetProducts(
         [FromQuery] string? search,
         CancellationToken cancellationToken,
@@ -27,9 +31,11 @@ public sealed class ApiProductsController(IProductService productService) : Cont
 
     /// <summary>Obtiene un producto por su identificador.</summary>
     /// <response code="200">El producto solicitado.</response>
+    /// <response code="401">Falta el token o es inválido.</response>
     /// <response code="404">No existe un producto con ese id.</response>
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProduct(int id, CancellationToken cancellationToken)
     {
@@ -40,9 +46,14 @@ public sealed class ApiProductsController(IProductService productService) : Cont
     /// <summary>Crea un producto nuevo.</summary>
     /// <response code="201">Producto creado.</response>
     /// <response code="400">Datos inválidos.</response>
+    /// <response code="401">Falta el token o es inválido.</response>
+    /// <response code="403">El rol del usuario no permite modificar el inventario.</response>
     [HttpPost]
+    [Authorize(Roles = AppRoles.Operadores)]
     [ProducesResponseType(typeof(ProductDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CreateProduct([FromBody] SaveProductDto input, CancellationToken cancellationToken)
     {
         var result = await productService.CreateAsync(input, cancellationToken);
@@ -57,10 +68,15 @@ public sealed class ApiProductsController(IProductService productService) : Cont
     /// <summary>Actualiza los datos de un producto existente.</summary>
     /// <response code="200">Producto actualizado.</response>
     /// <response code="400">Datos inválidos.</response>
+    /// <response code="401">Falta el token o es inválido.</response>
+    /// <response code="403">El rol del usuario no permite modificar el inventario.</response>
     /// <response code="404">No existe un producto con ese id.</response>
     [HttpPut("{id:int}")]
+    [Authorize(Roles = AppRoles.Operadores)]
     [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateProduct(int id, [FromBody] SaveProductDto input, CancellationToken cancellationToken)
     {
@@ -77,9 +93,14 @@ public sealed class ApiProductsController(IProductService productService) : Cont
 
     /// <summary>Desactiva un producto (borrado lógico: conserva el historial).</summary>
     /// <response code="204">Producto desactivado.</response>
+    /// <response code="401">Falta el token o es inválido.</response>
+    /// <response code="403">El rol del usuario no permite modificar el inventario.</response>
     /// <response code="404">No existe un producto con ese id.</response>
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = AppRoles.Operadores)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteProduct(int id, CancellationToken cancellationToken)
     {
