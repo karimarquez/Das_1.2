@@ -24,5 +24,5 @@ public sealed class EfServiceSet(AppDbContext context, TimeProvider clock)
 
     public RecipeService Recipes => new(_recipes, _products, _movements, _unitOfWork, _user, clock, NullLogger<RecipeService>.Instance);
 
-    public ReportService Reports => new(_products, _movements);
+    public ReportService Reports => new(_products, _movements, NullLogger<ReportService>.Instance);
 }

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using DAS.Application.Abstractions.Persistence;
 using DAS.Application.DTOs;
@@ -5,15 +6,20 @@ using DAS.Application.Mappings;
 using DAS.Application.Services.Interfaces;
 using DAS.Domain.Entities;
 using DAS.Domain.Enums;
+using Microsoft.Extensions.Logging;
 
 namespace DAS.Application.Services;
 
-public sealed class ReportService(IProductRepository products, IMovementRepository movements) : IReportService
+public sealed class ReportService(
+    IProductRepository products,
+    IMovementRepository movements,
+    ILogger<ReportService> logger) : IReportService
 {
     private static readonly CultureInfo SpanishCulture = CultureInfo.GetCultureInfo("es-SV");
 
     public async Task<InventoryReportDto> BuildAsync(ReportPeriod period, DateTime referenceDate, CancellationToken cancellationToken = default)
     {
+        var stopwatch = Stopwatch.StartNew();
         var isDaily = period == ReportPeriod.Diario;
         var from = isDaily ? referenceDate.Date : new DateTime(referenceDate.Year, referenceDate.Month, 1);
         var to = isDaily ? from : from.AddMonths(1).AddDays(-1);
@@ -42,7 +48,7 @@ public sealed class ReportService(IProductRepository products, IMovementReposito
             .Where(movement => movement.Type == type)
             .Sum(movement => movement.Count);
 
-        return new InventoryReportDto
+        var report = new InventoryReportDto
         {
             Period = period,
             From = from,
@@ -62,6 +68,17 @@ public sealed class ReportService(IProductRepository products, IMovementReposito
             ConsumptionCost = lines.Sum(line => line.ConsumptionCost),
             WasteCost = lines.Sum(line => line.WasteCost)
         };
+
+        logger.LogInformation(
+            "Reporte de inventario {Period} generado para {FromDate:yyyy-MM-dd} - {ToDate:yyyy-MM-dd}: {ProductCount} productos y {MovementCount} movimientos recientes en {ElapsedMilliseconds} ms",
+            period,
+            from,
+            to,
+            lines.Count,
+            periodMovements.Count,
+            stopwatch.ElapsedMilliseconds);
+
+        return report;
     }
 
     private static ProductReportLineDto BuildLine(InventoryProduct product, IEnumerable<MovementReportValueDto> productMovements)

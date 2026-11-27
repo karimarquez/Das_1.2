@@ -35,7 +35,7 @@ public sealed class TestInventory
     public RecipeService RecipeService() =>
         new(Recipes, Products, Movements, UnitOfWork, User, Clock, NullLogger<RecipeService>.Instance);
 
-    public ReportService ReportService() => new(Products, Movements);
+    public ReportService ReportService() => new(Products, Movements, NullLogger<ReportService>.Instance);
 
     public InventoryProduct AddProduct(
         string name,
