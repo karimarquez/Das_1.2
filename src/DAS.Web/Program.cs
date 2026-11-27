@@ -9,11 +9,15 @@ builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration)
     .AddWebPresentation(builder.Configuration)
-    .AddWebSecurity(builder.Configuration, builder.Environment);
+    .AddWebSecurity(builder.Configuration, builder.Environment)
+    .AddApplicationProtection(builder.Configuration)
+    .AddApiDocumentation();
 
 var app = builder.Build();
 
 await app.Services.InitializeDatabaseAsync(app.Configuration);
+
+app.UseSecurityHeaders();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -22,9 +26,11 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseSpanishCulture();
-app.UseStatusCodePagesWithReExecute("/error/{0}");
+app.UseStatusCodeResponses();
 app.UseHttpsRedirection();
+app.UseApiDocumentation();
 app.UseRouting();
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();

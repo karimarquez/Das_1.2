@@ -11,12 +11,13 @@ src/
   DAS.Application/     Servicios (casos de uso), DTOs e interfaces de repositorios y unidad de trabajo.
   DAS.Infrastructure/  EF Core: AppDbContext, configuraciones, repositorios, unidad de trabajo, migraciones,
                        datos iniciales, Identity y exportación CSV.
-  DAS.Web/             Controladores MVC, vistas Razor, ViewModels, API y composición de dependencias.
+  DAS.Web/             Controladores MVC, vistas Razor, ViewModels, API, Swagger, seguridad y composición de dependencias.
 tests/
   DAS.Tests/           Pruebas unitarias, de integración (SQLite en memoria), funcionales (HTTP) y de arquitectura.
 docs/
   arquitectura.md      Guía de arquitectura: capas, repositorios, unidad de trabajo y dónde va cada cambio.
   experiencia-usuario.md  Necesidades, perfiles, historias con criterios de aceptación y flujos.
+  seguridad-asincronia-y-api.md  Etapa 4: protección (CSRF, XSS, validaciones), AJAX/Fetch, Swagger y pruebas de la API.
   prototipo-inicial/   Prototipo estático anterior (barra superior y tarjetas), solo como antecedente.
 ```
 
@@ -47,6 +48,9 @@ dotnet test
 | `Unit/Infrastructure` | Exportación CSV. |
 | `Integration` | Repositorios, unidad de trabajo, migraciones y restricciones con SQLite en memoria. |
 | `Functional` | La aplicación completa por HTTP: autorización por rol, antifalsificación, recetas, reportes y API JWT. |
+| `Functional/SecurityTests`, `ValidationTests` | Encabezados y CSP, CSRF en formularios y AJAX, XSS, validación de cliente y servidor, límite de intentos. |
+| `Functional/AsyncEndpointsTests` | Endpoints JSON que consume el sitio con Fetch y jQuery AJAX. |
+| `Functional/ProductApiTests`, `ApiDocumentationTests` | API JWT de punta a punta, contrato de respuestas, consistencia de datos y documento OpenAPI. |
 | `Architecture` | Dependencias permitidas entre capas y contenedor de dependencias. |
 
 ## Migraciones (Entity Framework Core)
@@ -96,6 +100,30 @@ En Desarrollo, si no se configura una clave JWT, se genera una clave temporal al
 ```powershell
 dotnet user-secrets set "Jwt:SigningKey" "<secreto-aleatorio-de-al-menos-32-caracteres>" --project src/DAS.Web
 ```
+
+## Documentación de la API (Swagger)
+
+Con la aplicación en Desarrollo abre `http://localhost:5257/swagger`. Ahí están todos los endpoints `/api/...` con sus esquemas, códigos de respuesta y ejemplos de error.
+
+1. Ejecuta `POST /api/auth/token` desde Swagger.
+2. Copia el `access_token` en el botón **Authorize**.
+3. Prueba la API de productos.
+
+Los endpoints de **sesión web** son los que usa el propio sitio con Fetch y jQuery AJAX: usan la cookie de la sesión y, si modifican datos, el encabezado `X-CSRF-TOKEN`. Para publicar Swagger en otro entorno configura `Swagger:Habilitado=true`.
+
+El archivo `src/DAS.Web/DAS.Web.http` encadena las llamadas de la API JWT para probarlas desde Visual Studio. Coloca tu contraseña local en `src/DAS.Web/http-client.env.json.user`; Git no sube ese archivo.
+
+## Seguridad y comunicación asíncrona
+
+| Tema | Qué hace la aplicación |
+|---|---|
+| CSRF | Toda acción POST de las vistas exige el token antifalsificación; las llamadas AJAX lo envían en `X-CSRF-TOKEN` |
+| XSS | Envía una política de contenido (CSP) estricta y encabezados de seguridad. Los campos de texto no aceptan `<` ni `>`, y la salida se codifica en HTML y en JSON |
+| Validación | DataAnnotations en ViewModels y en `SaveProductDto`, validadas en el servidor y en el navegador con los mismos mensajes |
+| Credenciales | Se permiten 10 intentos por minuto en inicio de sesión, registro y token (`Seguridad:IntentosDeCredencialesPorMinuto`); el bloqueo de Identity se mantiene |
+| Interfaz | El tablero registra movimientos con Fetch, conteos con jQuery AJAX y se actualiza sin recargar; las recetas se preparan con Fetch |
+
+El detalle de cada punto, con los archivos y pruebas que lo cubren, está en [docs/seguridad-asincronia-y-api.md](docs/seguridad-asincronia-y-api.md).
 
 ## Recuperación de contraseña
 

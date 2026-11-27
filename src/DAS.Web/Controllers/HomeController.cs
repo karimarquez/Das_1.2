@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DAS.Web.Controllers;
 
+[IgnoreAntiforgeryToken]
 public class HomeController : Controller
 {
     [AllowAnonymous]
@@ -19,9 +20,12 @@ public class HomeController : Controller
     [Route("error/{code:int}")]
     public IActionResult Status(int code)
     {
-        var model = code == StatusCodes.Status404NotFound
-            ? new StatusViewModel(code, "No encontramos lo que buscas", "El producto, la receta o la página solicitada no existe o cambió de dirección.")
-            : new StatusViewModel(code, "No fue posible completar la solicitud", "Revisa los datos e inténtalo de nuevo.");
+        var model = code switch
+        {
+            StatusCodes.Status404NotFound => new StatusViewModel(code, "No encontramos lo que buscas", "El producto, la receta o la página solicitada no existe o cambió de dirección."),
+            StatusCodes.Status429TooManyRequests => new StatusViewModel(code, "Demasiados intentos", "Por seguridad se limitaron los intentos de acceso desde este equipo. Espera un minuto e inténtalo de nuevo."),
+            _ => new StatusViewModel(code, "No fue posible completar la solicitud", "Revisa los datos e inténtalo de nuevo.")
+        };
 
         return View(model);
     }

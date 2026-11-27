@@ -1,7 +1,6 @@
 using DAS.Application.DTOs;
 using DAS.Application.Security;
 using DAS.Application.Services.Interfaces;
-using DAS.Domain.Enums;
 using DAS.Web.Configuration;
 using DAS.Web.Extensions;
 using DAS.Web.Models.ViewModels;
@@ -16,29 +15,34 @@ public class InventoryController(
     IProductQueryService productService,
     IMovementService movementService,
     IPhysicalCountService countService,
+    IDashboardService dashboardService,
     IOptions<InventoryOptions> options) : Controller
 {
     [HttpGet("~/")]
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
-        var products = await productService.GetActiveAsync(cancellationToken);
-        var today = await movementService.CountByTypeAsync(DateTime.Today, DateTime.Today, cancellationToken);
-        var recent = await movementService.SearchAsync(new MovementQueryDto(Take: options.Value.RecentMovementsCount), cancellationToken);
+        var dashboard = await dashboardService.GetAsync(options.Value.RecentMovementsCount, cancellationToken);
 
         var model = new InventoryDashboardViewModel
         {
-            Products = products,
-            RecentMovements = recent,
-            ProductCount = products.Count,
-            LowStockCount = products.Count(product => product.IsLowStock),
-            TodayMovementCount = today.Sum(count => count.Count),
-            TodayConsumptionCount = today
-                .Where(count => count.Type == MovementType.Consumo)
-                .Sum(count => count.Count)
+            Products = dashboard.Products,
+            RecentMovements = dashboard.RecentMovements,
+            ProductCount = dashboard.ProductCount,
+            LowStockCount = dashboard.LowStockCount,
+            TodayMovementCount = dashboard.TodayMovementCount,
+            TodayConsumptionCount = dashboard.TodayConsumptionCount
         };
 
         return View(model);
+    }
+
+    [HttpGet("actividad")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> RecentActivity(CancellationToken cancellationToken)
+    {
+        var recent = await movementService.SearchAsync(new MovementQueryDto(Take: options.Value.RecentMovementsCount), cancellationToken);
+        return PartialView("_RecentActivity", recent);
     }
 
     [HttpGet("conteo")]

@@ -1,0 +1,103 @@
+# @name token
+POST {{baseUrl}}/api/auth/token
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+
+@accessToken = {{token.response.body.$.access_token}}
+
+GET {{baseUrl}}/api/inventario/productos?search=cerveza&page=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+###
+
+# @name crear
+POST {{baseUrl}}/api/inventario/productos
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Ron añejo {{$randomInt 1000 9999}}",
+  "category": "Licores",
+  "presentation": "Botella 750 ml",
+  "unit": "botellas",
+  "baseUnit": "oz",
+  "baseUnitsPerStockUnit": 25.36,
+  "minimumStock": 2,
+  "unitCost": 14.75,
+  "location": "Estante de licores",
+  "initialStock": 6
+}
+
+###
+
+@productId = {{crear.response.body.$.id}}
+
+GET {{baseUrl}}/api/inventario/productos/{{productId}}
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+###
+
+PUT {{baseUrl}}/api/inventario/productos/{{productId}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Ron añejo reserva {{$randomInt 1000 9999}}",
+  "category": "Licores",
+  "presentation": "Botella 750 ml",
+  "unit": "botellas",
+  "baseUnit": "oz",
+  "baseUnitsPerStockUnit": 25.36,
+  "minimumStock": 3,
+  "unitCost": 15.5,
+  "location": "Estante de licores",
+  "initialStock": 0
+}
+
+###
+
+DELETE {{baseUrl}}/api/inventario/productos/{{productId}}
+Authorization: Bearer {{accessToken}}
+
+###
+
+POST {{baseUrl}}/api/inventario/productos
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "<script>alert('xss')</script>",
+  "category": "Electrónica",
+  "presentation": "",
+  "unit": "oz",
+  "baseUnit": "oz",
+  "baseUnitsPerStockUnit": 2,
+  "minimumStock": -1,
+  "unitCost": 0,
+  "location": "Barra",
+  "initialStock": 0
+}
+
+###
+
+GET {{baseUrl}}/api/inventario/productos
+Accept: application/json
+
+###
+
+GET {{baseUrl}}/api/inventario/productos
+Accept: application/json
+Authorization: Bearer token-alterado
+
+###
+
+GET {{baseUrl}}/swagger/v1/swagger.json
+Accept: application/json

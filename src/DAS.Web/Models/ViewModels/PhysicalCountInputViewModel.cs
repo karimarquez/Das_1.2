@@ -4,6 +4,8 @@ namespace DAS.Web.Models.ViewModels;
 
 public class PhysicalCountInputViewModel
 {
+    [Display(Name = "Producto")]
+    [Required(ErrorMessage = "Selecciona un producto.")]
     [Range(1, int.MaxValue, ErrorMessage = "Selecciona un producto.")]
     public int ProductId { get; set; }
 

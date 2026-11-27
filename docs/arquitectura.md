@@ -25,14 +25,16 @@ Reglas que no se rompen:
 
 Las pruebas de `tests/DAS.Tests/Architecture` revisan estas reglas en cada ejecución.
 
+La protección (CSRF, XSS, validaciones), la comunicación asíncrona y Swagger se describen en [seguridad-asincronia-y-api.md](seguridad-asincronia-y-api.md).
+
 ## Qué contiene cada proyecto
 
 | Proyecto | Carpetas |
 |---|---|
 | `DAS.Domain` | `Entities` (InventoryProduct, InventoryMovement, Recipe, PhysicalCount), `Enums`, `Catalogs`, `Exceptions`, `Common` |
-| `DAS.Application` | `Abstractions/Persistence` (repositorios y unidad de trabajo), `Abstractions` (ICurrentUser, IReportExporter), `Services` y `Services/Interfaces`, `DTOs`, `Mappings` (entidad a DTO), `Security` (AppRoles), `Common` (ServiceResult) |
+| `DAS.Application` | `Abstractions/Persistence` (repositorios y unidad de trabajo), `Abstractions` (ICurrentUser, IReportExporter), `Services` y `Services/Interfaces`, `DTOs`, `Mappings` (entidad a DTO), `Security` (AppRoles), `Common` (ServiceResult), `Validation` (PlainTextAttribute, InputValidator) |
 | `DAS.Infrastructure` | `Persistence` (AppDbContext, `Configurations`, `Repositories`, `Interceptors`, `Seed`), `Migrations`, `Identity`, `Reports` (CsvReportExporter) |
-| `DAS.Web` | `Controllers`, `Views`, `Models` (ViewModels, Auth, Validation), `Mappings` (ViewModel a DTO), `Security` (HttpCurrentUser), `Extensions`, `Configuration`, `wwwroot` |
+| `DAS.Web` | `Controllers` (`Api` para los endpoints JSON), `Views`, `Models` (ViewModels, Auth, Validation, Api), `Mappings` (ViewModel a DTO), `Security` (HttpCurrentUser, encabezados de seguridad, antifalsificación, límites de intentos), `OpenApi` (filtros de Swagger), `Extensions`, `Configuration`, `wwwroot` (`js/site.js` y scripts por página) |
 | `DAS.Tests` | `Unit`, `Integration`, `Functional`, `Architecture`, `Fakes` |
 
 ## Recorrido de una petición
@@ -106,7 +108,9 @@ builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration)
     .AddWebPresentation(builder.Configuration)
-    .AddWebSecurity(builder.Configuration, builder.Environment);
+    .AddWebSecurity(builder.Configuration, builder.Environment)
+    .AddApplicationProtection(builder.Configuration)
+    .AddApiDocumentation();
 ```
 
 | Registro | Ciclo de vida |

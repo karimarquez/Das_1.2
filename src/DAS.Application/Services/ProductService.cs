@@ -4,6 +4,7 @@ using DAS.Application.Common;
 using DAS.Application.DTOs;
 using DAS.Application.Mappings;
 using DAS.Application.Services.Interfaces;
+using DAS.Application.Validation;
 using DAS.Domain.Entities;
 using DAS.Domain.Enums;
 using Microsoft.Extensions.Logging;
@@ -40,6 +41,12 @@ public sealed class ProductService(
 
     public async Task<ServiceResult<ProductDto>> CreateAsync(SaveProductDto input, CancellationToken cancellationToken = default)
     {
+        var validation = InputValidator.Validate(input);
+        if (!validation.Succeeded)
+        {
+            return ServiceResult<ProductDto>.Fail(validation.Error!, validation.Field);
+        }
+
         if (await products.NameExistsAsync(input.Name, null, cancellationToken))
         {
             return ServiceResult<ProductDto>.Fail(DuplicateNameMessage, nameof(SaveProductDto.Name));
@@ -84,6 +91,12 @@ public sealed class ProductService(
         if (product is null)
         {
             return ServiceResult<ProductDto>.Fail("El producto no existe.");
+        }
+
+        var validation = InputValidator.Validate(input);
+        if (!validation.Succeeded)
+        {
+            return ServiceResult<ProductDto>.Fail(validation.Error!, validation.Field);
         }
 
         if (await products.NameExistsAsync(input.Name, id, cancellationToken))

@@ -1,13 +1,16 @@
-﻿@{
+﻿@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var antiforgeryToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
 }
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="@antiforgeryToken" />
+    <meta name="csrf-header" content="@SecurityPolicies.AntiforgeryHeaderName" />
     <title>@ViewData["Title"] - Pipiris Nais</title>
-    <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
@@ -40,6 +43,7 @@
             <div class="content-wrap">
             @RenderBody()
             </div>
+            <div id="asyncNotices" class="toast-stack" aria-live="polite" aria-relevant="additions"></div>
             <footer class="app-footer"><span>Pipiris Nais · Gestión de bebidas</span><span>Prototipo de inventario</span></footer>
         </main>
     </div>

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using DAS.Application.Validation;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -17,10 +18,12 @@ public class RecipeFormViewModel : IValidatableObject
     [Display(Name = "Nombre de la receta")]
     [Required(ErrorMessage = "Escribe el nombre de la receta.")]
     [StringLength(80, MinimumLength = 3, ErrorMessage = "El nombre debe tener entre {2} y {1} caracteres.")]
+    [PlainText]
     public string Name { get; set; } = string.Empty;
 
     [Display(Name = "Descripción")]
     [StringLength(160, ErrorMessage = "La descripción admite como máximo {1} caracteres.")]
+    [PlainText]
     public string? Description { get; set; }
 
     //Se enlaza como colección: Ingredients[0].ProductId, Ingredients[0].QuantityPerServing...

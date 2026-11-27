@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <main class="container py-5" style="max-width: 30rem">
+    <main class="container py-5 auth-page">
         <h1 class="h3 mb-4">Iniciar sesión</h1>
         <form asp-action="Login" method="post">
             <input asp-for="ReturnUrl" type="hidden" />
@@ -25,5 +25,7 @@
         </form>
         <p class="mt-3">¿No tienes cuenta? <a asp-action="Register">Regístrate</a></p>
     </main>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <partial name="_ValidationScriptsPartial" />
 </body>
 </html>
