@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<IPhysicalCountService, PhysicalCountService>();
         services.AddScoped<IRecipeService, RecipeService>();
         services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<IDashboardService, DashboardService>();
         return services;
     }
 }

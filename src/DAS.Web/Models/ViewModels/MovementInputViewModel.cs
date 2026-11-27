@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using DAS.Application.Validation;
 using DAS.Domain.Enums;
 using DAS.Web.Models.Validation;
 
@@ -7,6 +8,7 @@ namespace DAS.Web.Models.ViewModels;
 public class MovementInputViewModel : IValidatableObject
 {
     [Display(Name = "Producto")]
+    [Required(ErrorMessage = "Selecciona un producto.")]
     [Range(1, int.MaxValue, ErrorMessage = "Selecciona un producto.")]
     public int ProductId { get; set; }
 
@@ -23,6 +25,7 @@ public class MovementInputViewModel : IValidatableObject
     [Display(Name = "Motivo")]
     [Required(ErrorMessage = "Indica el motivo del movimiento.")]
     [StringLength(120, MinimumLength = 3, ErrorMessage = "El motivo debe tener entre {2} y {1} caracteres.")]
+    [PlainText]
     public string Reason { get; set; } = string.Empty;
 
     [Display(Name = "Fecha del movimiento")]

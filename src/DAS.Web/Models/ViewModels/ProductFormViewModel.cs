@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using DAS.Application.Validation;
 using DAS.Domain.Catalogs;
 using DAS.Web.Models.Validation;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,7 @@ public class ProductFormViewModel : IValidatableObject
     [Display(Name = "Nombre del producto")]
     [Required(ErrorMessage = "Escribe el nombre del producto.")]
     [StringLength(80, MinimumLength = 2, ErrorMessage = "El nombre debe tener entre {2} y {1} caracteres.")]
+    [PlainText]
     [Remote("CheckName", "Products", AdditionalFields = nameof(Id), ErrorMessage = "Ya existe un producto con ese nombre.")]
     public string Name { get; set; } = string.Empty;
 
@@ -28,6 +30,7 @@ public class ProductFormViewModel : IValidatableObject
     [Display(Name = "Presentación")]
     [Required(ErrorMessage = "Describe la presentación.")]
     [StringLength(50, ErrorMessage = "La presentación admite como máximo {1} caracteres.")]
+    [PlainText]
     public string Presentation { get; set; } = string.Empty;
 
     [Display(Name = "Unidad de control")]
@@ -64,6 +67,7 @@ public class ProductFormViewModel : IValidatableObject
     [Display(Name = "Ubicación")]
     [Required(ErrorMessage = "Indica dónde se almacena el producto.")]
     [StringLength(40, ErrorMessage = "La ubicación admite como máximo {1} caracteres.")]
+    [PlainText]
     public string Location { get; set; } = "Barra";
 
     [BindNever]

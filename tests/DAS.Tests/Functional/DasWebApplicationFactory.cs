@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using DAS.Infrastructure.Persistence;
+using DAS.Web.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -27,6 +28,7 @@ public sealed class DasWebApplicationFactory : WebApplicationFactory<Program>
     {
         builder.UseEnvironment("Testing");
         builder.UseSetting("ConnectionStrings:DefaultConnection", _connectionString);
+        builder.UseSetting(SecurityPolicies.CredentialAttemptsSetting, "1000");
         builder.ConfigureTestServices(services =>
         {
             services.AddAuthentication()

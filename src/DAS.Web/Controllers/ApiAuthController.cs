@@ -3,9 +3,11 @@ using System.Security.Claims;
 using System.Text;
 using DAS.Infrastructure.Identity;
 using DAS.Web.Models.Auth;
+using DAS.Web.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 
 namespace DAS.Web.Controllers;
@@ -19,6 +21,13 @@ public sealed class ApiAuthController(
     IConfiguration configuration) : ControllerBase
 {
     [HttpPost("token")]
+    [EnableRateLimiting(SecurityPolicies.CredentialsRateLimit)]
+    [EndpointSummary("Obtiene un token JWT")]
+    [EndpointDescription("Recibe el email y la password de una cuenta registrada y devuelve access_token, token_type (Bearer) y expires_at (UTC, una hora de vigencia). Cinco contraseñas incorrectas bloquean la cuenta 10 minutos y los intentos por minuto desde un mismo equipo están limitados.")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests, "application/problem+json")]
     public async Task<IActionResult> CreateToken(TokenRequest input)
     {
         var user = await userManager.FindByEmailAsync(input.Email);

@@ -17,10 +17,10 @@
 @if (TempData["Success"] is string success) { <div class="notice notice-success" role="status">@success</div> }
 @if (TempData["Error"] is string error) { <div class="notice notice-error" role="alert">@error</div> }
 
-<section class="recipe-grid">
+<section class="recipe-grid" data-page="recipes">
 @foreach (var recipe in Model.Recipes)
 {
-    <article class="panel recipe-card">
+    <article class="panel recipe-card" data-recipe-id="@recipe.Id">
         <div class="recipe-heading"><div><p class="eyebrow">RECETA · @recipe.Id.ToString("00")</p><h2>@recipe.Name</h2></div><span class="recipe-stamp">BAR</span></div>
         <p class="muted recipe-description">@recipe.Description</p>
         <div class="recipe-ingredients"><span class="recipe-label">INGREDIENTES POR PORCIÓN</span>
@@ -33,14 +33,17 @@
         {
             <div class="d-flex gap-2 mt-3 align-items-center">
                 <a class="button button-secondary" asp-action="Edit" asp-route-id="@recipe.Id">Editar receta</a>
-                <form asp-action="Delete" asp-route-id="@recipe.Id" method="post" onsubmit="return confirm('¿Eliminar esta receta?');">
+                <form asp-action="Delete" asp-route-id="@recipe.Id" method="post" data-confirm="¿Eliminar la receta @recipe.Name? Esta acción no se puede deshacer.">
                     <button class="button button-secondary" type="submit">Eliminar receta</button>
                 </form>
             </div>
-            <form asp-action="Prepare" asp-route-recipeId="@recipe.Id" method="post" class="recipe-action">
-                <label class="form-label">Porciones<input class="form-control" type="number" name="Servings" min="1" max="1000" value="1" required /></label>
+            <form asp-action="Prepare" asp-route-recipeId="@recipe.Id" method="post" class="recipe-action" data-async-url="@Url.Action("Prepare", "RecipesApi", new { id = recipe.Id })">
+                <label class="form-label">Porciones<input asp-for="Preparation.Servings" name="Servings" id="servings-@recipe.Id" class="form-control" type="number" min="1" max="1000" /></label>
                 <button class="button button-primary" type="submit">Registrar preparación</button>
+                <span class="validation-message recipe-error" data-valmsg-for="Servings" data-valmsg-replace="true"></span>
+                <div class="validation-summary recipe-error" data-role="form-errors" role="alert"></div>
             </form>
+            <p class="recipe-result" data-role="recipe-result" role="status" hidden></p>
         }
     </article>
 }
@@ -51,3 +54,8 @@
 }
 
 <p class="recipe-footnote">Las cantidades de receta se convierten a la presentación de inventario usando la equivalencia configurada en cada producto.</p>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/recipes.js" asp-append-version="true"></script>
+}

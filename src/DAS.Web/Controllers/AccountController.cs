@@ -1,9 +1,11 @@
 using DAS.Application.Security;
 using DAS.Infrastructure.Identity;
 using DAS.Web.Models.Auth;
+using DAS.Web.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace DAS.Web.Controllers;
 
@@ -19,6 +21,7 @@ public sealed class AccountController(
 
     [HttpPost("ingresar")]
     [ValidateAntiForgeryToken]
+    [EnableRateLimiting(SecurityPolicies.CredentialsRateLimit)]
     public async Task<IActionResult> Login(LoginViewModel input)
     {
         if (!ModelState.IsValid)
@@ -45,6 +48,7 @@ public sealed class AccountController(
 
     [HttpPost("registro")]
     [ValidateAntiForgeryToken]
+    [EnableRateLimiting(SecurityPolicies.CredentialsRateLimit)]
     public async Task<IActionResult> Register(RegisterViewModel input)
     {
         if (!ModelState.IsValid)
